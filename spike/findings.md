@@ -1,8 +1,6 @@
 # Phase 0 Findings
 
-Source captures: `spike/captures/cli-hooks.jsonl`. (`spike/captures/agent-sdk.jsonl` does not
-exist yet — Task 4, the Agent SDK spike, has not been run. The comparison section below is
-left pending until that capture exists.)
+Source captures: `spike/captures/cli-hooks.jsonl`, `spike/captures/agent-sdk.jsonl`.
 
 ## Hook events and payload fields (CLI hooks)
 
@@ -27,7 +25,7 @@ below).
   `"Explore"`), plus `tool_response.content`, `tool_response.totalDurationMs`,
   `tool_response.totalTokens`, `tool_response.usage`, etc. This one `PostToolUse` event is
   tagged with the **parent** session's `session_id` (`201f511d-ecda-...`) — verified directly
-  against the raw capture (record index 8 in `cli-hooks.jsonl`). There is no separate
+  against the raw capture (record 9 in `cli-hooks.jsonl`). There is no separate
   `SessionStart`/`Stop` pair anywhere in the file for the subagent — its `agentId` never
   appears as a top-level `session_id` on any other record.
 - Does any payload carry a parent/session linkage field distinguishing subagent from main
@@ -73,6 +71,15 @@ below).
 - Observed behavior: n/a — not exercised in this capture.
 - Verdict for the v2 "resume" intervention design: **Unconfirmed — remains an open question**
   until a dedicated resume test is run and captured.
+
+## Review-state signal
+
+No hook event or field observed in either capture (`cli-hooks.jsonl` or `agent-sdk.jsonl`)
+indicated a "needs review" state. The captured events only show queued→running→done/failed-shaped
+transitions (`SessionStart` → `PostToolUse`* → `Stop`) — there is no distinct event, status
+field, or flag anywhere in either capture that would map onto a `review` state. This remains
+an open question for Phase 1: `review` will need a heuristic (e.g. inferred from tool type or
+content) or a manual toggle, since no hook signal for it exists today.
 
 ## CLI hooks vs. Agent SDK — ingestion decision
 
