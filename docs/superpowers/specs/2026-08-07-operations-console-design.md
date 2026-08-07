@@ -18,7 +18,7 @@ Clarified during design:
 
 ## Executive summary
 
-Build a local web app: Claude Code hooks push JSON events over HTTP to a small Node/TypeScript backend, which validates and writes them to SQLite (source of truth) and fans them out over SSE to a React frontend showing a kanban board (queued/running/failed/done for v1; waiting/review deferred). Every session — main or subagent — is its own card, with an owner badge and a recap shown once done. Recommended architecture: **single Node process, Express + `better-sqlite3`, SSE push (no WebSocket, no broker), React + Vite frontend, single package.** v1 ships read-only; DB-mediated intervention (approve/retry/resume/cancel/guidance) is v2. Electron-compatibility is preserved by keeping the Node backend as a standalone process the UI shell only talks to over HTTP/SSE.
+Build a local web app: Claude Code hooks push JSON events over HTTP to a small Node/TypeScript backend, which validates and writes them to SQLite (source of truth) and fans them out over SSE to a React frontend showing a kanban board (queued/running/failed/done for v1; waiting/review deferred). Every session — main or subagent — is its own card, with an owner badge and a recap shown once done. Recommended architecture: **single Node process, Express + `better-sqlite3`, SSE push (no WebSocket, no broker), React + Vite frontend, single package.** v1 ships read-only; DB-mediated intervention (approve/retry/resume/cancel/guidance) is v2. Electron-compatibility is preserved by keeping the Node backend as a standalone process the UI shell only talks to over HTTP/SSE. VSCode-extension compatibility is preserved the same way plus one more layer: the frontend never calls `fetch`/`EventSource` directly — it goes through a `Transport` interface, so a future VSCode Webview shell can swap in a `postMessage`-bridged implementation (routed through the extension host, which can always reach the backend) without touching UI code.
 
 ## Problem framing
 
@@ -114,6 +114,7 @@ Minimal responsibilities for v1:
 - No routing complexity needed beyond board vs. drawer-open (drawer can be a URL param for shareability, still MVP-simple).
 - *(v2)* Intervention controls: buttons/inputs scoped to what's valid for current status.
 - **Visual design**: run this through the `frontend-design` skill when Phase 1 UI work starts — palette/type/layout should be chosen against real card content (status, owner, recap), not decided in the abstract here.
+- **Transport abstraction (VSCode-extension compatibility)**: React components must talk to a small `Transport` interface (`getState()`, `subscribe(onEvent)`, `postAction(...)`), never to `fetch`/`EventSource` directly. Web and Electron use the same `HttpSseTransport` implementation (direct HTTP/SSE to the backend). A VSCode extension shell cannot use this implementation as-is: a VSCode Webview panel is a sandboxed iframe that either can't reach `http://localhost:<port>` at all (remote/web VSCode) or can only do so under a CSP the extension must explicitly configure — the documented, portable pattern is instead for the Webview to talk only via `acquireVsCodeApi().postMessage`/`onDidReceiveMessage`, with the extension host (a plain Node process, same runtime our backend already targets) acting as the bridge that actually does the HTTP/SSE calls. So a future `PostMessageTransport` implementing the same interface — Webview UI ↔ postMessage ↔ extension host ↔ HTTP/SSE ↔ backend — swaps in without touching any component. No VSCode-specific code ships in v1; this only constrains where `fetch`/`EventSource` calls are allowed to live (`src/frontend/lib/transport/`, nowhere else).
 
 ## Repository structure
 
@@ -129,7 +130,9 @@ claudekanban/
     frontend/
       board/
       detail/
-      lib/             # live-state client
+      lib/
+        transport/     # Transport interface + HttpSseTransport (only place fetch/EventSource may appear)
+        useLiveState.ts   # live-state client, consumes Transport
       main.tsx
   hooks/                 # scripts installed into Claude Code's hook config
     on-session-start.sh
