@@ -193,8 +193,12 @@ claudekanban/
 ## Open questions
 
 1. Exact set of Claude Code hook events and their payload fields — must be confirmed in Phase 0, not assumed.
+   **Resolved (Phase 0):** see spike/findings.md — CLI hooks emit `SessionStart`, `PostToolUse`, and `Stop` (no `PreToolUse`/`SubagentStop`/`UserPromptSubmit` observed); field list captured per event.
 2. Exact CLI/mechanism for "resume" (`claude --resume`? something else?) — confirm before designing the retry/resume intervention.
+   **Resolved (Phase 0):** see spike/findings.md — not tested in this spike, still open; no resume data captured yet.
 3. Whether distinct "Agent" identity within a session (beyond session id) is exposed at all by Claude Code, or whether Agent should just be collapsed into Session for MVP.
+   **Resolved (Phase 0):** see spike/findings.md — a subagent spawn is exposed only as `subagent_type`/`tool_response.agentId` nested inside one `PostToolUse` event on the parent session, not as its own session-id stream; the spec's assumption of a subagent-owned hook stream conflicts with this and needs resolving before Phase 1.
 4. What marks a session as needing "review" vs going straight to "done" — is there a hook signal for this, or does it need a heuristic/manual toggle?
+   **Resolved (Phase 0):** see spike/findings.md — no such signal was observed in the captured events; remains a heuristic/manual-toggle question, unresolved.
 5. Poll interval for `poll-interventions.sh` (tradeoff: responsiveness vs. overhead) — proposed 2s default, worth confirming acceptable.
 6. Whether Task creation is manual (developer names a task, then attaches sessions) or auto-created per session with a title inferred from the first prompt — affects Phase 1/2 scope. (Note: superseded by dropping Task from v1 — retained here as a v2 consideration if Task ever comes back.)
