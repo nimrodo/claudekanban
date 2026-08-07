@@ -76,14 +76,47 @@ below).
 
 ## CLI hooks vs. Agent SDK — ingestion decision
 
-Not yet compared — Task 4 (Agent SDK spike) has not been run. This section will be completed
-after Task 4.
+- **CLI-hooks capture (`spike/captures/cli-hooks.jsonl`):** exposes `SessionStart`,
+  `PostToolUse`, and `Stop` — all three fired reliably. A working `recap` source exists
+  (`Stop.last_assistant_message`), and subagent spawns are detectable via `PostToolUse` with
+  `tool_name: "Agent"`/`"Task"` and `tool_input.subagent_type`. Subagent identity/output is
+  nested inside that same `PostToolUse` event's `tool_response` (`tool_response.agentId`,
+  `tool_response.content`, usage stats), tagged with the **parent's** `session_id` — subagents
+  never get their own `SessionStart`/`Stop` stream.
 
-- CLI-hooks capture: exposes `SessionStart`, `PostToolUse`, and `Stop` events with rich
-  per-tool-call payloads including a working `recap` source (`Stop.last_assistant_message`)
-  and a way to detect subagent spawns (`PostToolUse` with `tool_name: "Agent"`), but folds all
-  subagent activity into the parent session's event stream rather than giving subagents their
-  own session-scoped hook stream.
-- Agent SDK capture: not yet available.
-- **Decision:** Pending Task 4.
-- **Why:** Pending Task 4.
+- **Agent SDK capture (`spike/captures/agent-sdk.jsonl`, 18 records):** native hook callbacks
+  were registered for `SessionStart`, `PostToolUse`, and `Stop` (verified correct registration
+  per the brief), plus every streamed SDK message was captured as `sdk_message`. Only
+  `PostToolUse` (4) and `Stop` (1) actually fired; **`SessionStart` did not fire at all**,
+  despite identical, correctly-wired registration — a real SDK behavioral gap, not a script
+  bug (confirmed in `task-4-report.md` and by its absence in the raw capture — `grep -c
+  '"hookEventName":"SessionStart"'` on the file returns 0). This directly breaks the `recap`
+  design's counterpart need for session-start metadata and would need a workaround if the SDK
+  path were adopted.
+
+  For subagent linkage, the raw capture (records 3, 6, and 14) shows the same fundamental shape
+  as CLI hooks: the `Task` tool-use (record 3, `sdk_message`) carries
+  `input.subagent_type: "Explore"`; the subagent's own tool calls (e.g. record 6's `Grep`
+  `PostToolUse`) carry `parent_tool_use_id` pointing back at the `Task` call, but their
+  top-level `session_id` (`146e88d8-...`) is identical to the **parent** session's — not a
+  distinct id. The final `PostToolUse` for the `Task` itself (record 14) nests the subagent's
+  full output under `tool_response.agentId` (`"a1b4636"`) and `tool_response.content`, exactly
+  mirroring the CLI-hooks shape (`tool_response.agentId`/`tool_response.content`there too). The
+  one addition the SDK stream offers is `parent_tool_use_id` threaded through every
+  `sdk_message`, which is a slightly more explicit call-graph pointer than CLI hooks'
+  `agent_id`/`agent_type` fields — but it does not solve the core problem: no independent
+  session-scoped stream for the subagent, in either integration path.
+
+- **Decision: Keep CLI hooks.**
+
+- **Why:** The Agent SDK capture does not deliver a decisive win on the one problem it was
+  hoped to solve — subagent linkage is nested inside the parent's `PostToolUse` event under
+  the same `session_id` in both captures, so switching would not simplify the `parent_session_id`
+  design conflict already flagged above. The SDK path also introduces a new regression
+  (`SessionStart` not firing) and a real scope narrowing: Agent-SDK ingestion only observes
+  sessions claudekanban itself launches as a library host, whereas CLI hooks passively observe
+  any session a developer starts independently in their own terminal — which is the core
+  product requirement (design spec's Problem framing: "running several Claude Code
+  sessions/subagents in parallel"). Since CLI hooks already deliver `SessionStart`/
+  `PostToolUse`/`Stop` reliably and the subagent-nesting limitation is equally present in both
+  paths, there is no offsetting benefit large enough to justify losing passive-observer scope.
