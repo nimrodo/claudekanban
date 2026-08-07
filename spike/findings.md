@@ -97,11 +97,13 @@ below).
   For subagent linkage, the raw capture (records 3, 6, and 14) shows the same fundamental shape
   as CLI hooks: the `Task` tool-use (record 3, `sdk_message`) carries
   `input.subagent_type: "Explore"`; the subagent's own tool calls (e.g. record 6's `Grep`
-  `PostToolUse`) carry `parent_tool_use_id` pointing back at the `Task` call, but their
-  top-level `session_id` (`146e88d8-...`) is identical to the **parent** session's — not a
+  `PostToolUse`) have their `sdk_message` counterparts (records 5 and 8) carrying
+  `parent_tool_use_id` pointing back at the `Task` call — the `PostToolUse` hook payload itself
+  carries no such field — but the `PostToolUse` record's top-level `session_id`
+  (`146e88d8-...`) is identical to the **parent** session's — not a
   distinct id. The final `PostToolUse` for the `Task` itself (record 14) nests the subagent's
   full output under `tool_response.agentId` (`"a1b4636"`) and `tool_response.content`, exactly
-  mirroring the CLI-hooks shape (`tool_response.agentId`/`tool_response.content`there too). The
+  mirroring the CLI-hooks shape (`tool_response.agentId`/`tool_response.content` there too). The
   one addition the SDK stream offers is `parent_tool_use_id` threaded through every
   `sdk_message`, which is a slightly more explicit call-graph pointer than CLI hooks'
   `agent_id`/`agent_type` fields — but it does not solve the core problem: no independent
