@@ -11,7 +11,7 @@ export function Board({ sessions }: { sessions: SessionDto[] }) {
   return (
     <div className="board">
       {STATUS_COLUMNS.map((status) => (
-        <div key={status} className="column">
+        <div key={status} className="column" data-status={status}>
           <h2>{status}</h2>
           {topLevel
             .filter((s) => s.status === status)
