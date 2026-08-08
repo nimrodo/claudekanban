@@ -80,7 +80,7 @@ Session is the sole kanban card, including subagents. No Task, no separate Agent
 | Transition | Trigger |
 |---|---|
 | queued → running | `SessionStart` hook received |
-| running → waiting | `PreToolUse` hook flags an approval-gated tool, or explicit "waiting" event (v2, once intervention is live) |
+| running → waiting | `PermissionRequest` hook fires (confirmed in a follow-up spike — see `spike/findings.md` "Review-state signal"; supersedes the originally-assumed but never-observed `PreToolUse` trigger), or `Notification` with `notification_type: "idle_prompt"` (Claude caught up, awaiting input) |
 | waiting → running | matching `intervention` row (origin=system, type=approval_request) resolved as approved (v2) |
 | running → review | *(v1: unused — no confirmed hook signal yet)* |
 | running → failed | `Stop`/error hook with non-zero/error payload, or ingest timeout (no event for N minutes while status=running) |
@@ -203,6 +203,6 @@ claudekanban/
 3. Whether distinct "Agent" identity within a session (beyond session id) is exposed at all by Claude Code, or whether Agent should just be collapsed into Session for MVP.
    **Resolved (Phase 0):** see spike/findings.md — a subagent spawn is exposed only as `subagent_type`/`tool_response.agentId` nested inside one `PostToolUse` event on the parent session, not as its own session-id stream; the spec's assumption of a subagent-owned hook stream conflicts with this and needs resolving before Phase 1.
 4. What marks a session as needing "review" vs going straight to "done" — is there a hook signal for this, or does it need a heuristic/manual toggle?
-   **Phase 0 outcome (not resolved):** see spike/findings.md ("Review-state signal") — no such signal was observed in the captured events; remains a heuristic/manual-toggle question, unresolved.
+   **Partially resolved (follow-up spike):** see spike/findings.md ("Review-state signal") — `PermissionRequest` is a confirmed, direct `running → waiting` signal (fires before the on-screen approval prompt, carries `tool_name`/`tool_input`), superseding the spec's originally-assumed but never-observed `PreToolUse` trigger. `Notification` with `notification_type: "idle_prompt"` is a second confirmed `waiting`-adjacent signal (Claude caught up, awaiting user input) — worth folding into Phase 1. A distinct `review` state (as opposed to `waiting`) still has no confirmed hook source and remains a heuristic/manual-toggle question.
 5. Poll interval for `poll-interventions.sh` (tradeoff: responsiveness vs. overhead) — proposed 2s default, worth confirming acceptable.
 6. Whether Task creation is manual (developer names a task, then attaches sessions) or auto-created per session with a title inferred from the first prompt — affects Phase 1/2 scope. (Note: superseded by dropping Task from v1 — retained here as a v2 consideration if Task ever comes back.)

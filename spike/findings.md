@@ -74,12 +74,58 @@ below).
 
 ## Review-state signal
 
-No hook event or field observed in either capture (`cli-hooks.jsonl` or `agent-sdk.jsonl`)
-indicated a "needs review" state. The captured events only show queued→running→done/failed-shaped
-transitions (`SessionStart` → `PostToolUse`* → `Stop`) — there is no distinct event, status
-field, or flag anywhere in either capture that would map onto a `review` state. This remains
-an open question for Phase 1: `review` will need a heuristic (e.g. inferred from tool type or
-content) or a manual toggle, since no hook signal for it exists today.
+**Resolved in a follow-up spike** (`spike/captures/review-state.jsonl`, after the original Phase 0
+captures found nothing). The original CLI-hooks/Agent-SDK captures only wired `SessionStart`,
+`PostToolUse`, and `Stop` — they never captured `Notification` or `PermissionRequest`, which is
+why no review-state signal showed up there. A dedicated follow-up (docs research against
+`https://code.claude.com/docs/en/hooks`, then a live capture on Claude Code 2.1.226) confirms two
+real signals:
+
+- **`PermissionRequest`** — fires when a tool call needs a permission decision, *before* the
+  on-screen prompt appears. Confirmed live payload (record 4 of `review-state.jsonl`):
+  ```json
+  {
+    "session_id": "ac05c769-...",
+    "cwd": "/Users/nimrodo/workspace/scratch",
+    "permission_mode": "default",
+    "hook_event_name": "PermissionRequest",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm nimrod.txt", "description": "Remove nimrod.txt"},
+    "permission_suggestions": [
+      {"type": "addDirectories", "directories": ["/Users/nimrodo/workspace/scratch"], "destination": "session"},
+      {"type": "setMode", "mode": "acceptEdits", "destination": "session"}
+    ]
+  }
+  ```
+  This is the direct `running → waiting` (approval-needed) signal the original spec's state
+  machine wanted from `PreToolUse` (which was never observed at all — see above). `PreToolUse`
+  should be considered superseded by `PermissionRequest` for this purpose.
+
+- **`Notification` with `notification_type: "idle_prompt"`** — fires when Claude finishes a turn
+  and is waiting on the user, unrelated to permissions. Confirmed live payload (records 2, 3, 5
+  of `review-state.jsonl`):
+  ```json
+  {
+    "session_id": "...", "cwd": "...", "prompt_id": "...",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input",
+    "notification_type": "idle_prompt"
+  }
+  ```
+  Docs also list a `notification_type: "permission_prompt"` value, but it was **not observed** in
+  this capture — the same real permission prompt that produced the `PermissionRequest` event above
+  did not also produce a `Notification` with type `permission_prompt`. Only `idle_prompt` fired via
+  `Notification` in this version (2.1.226). Do not assume `Notification`/`permission_prompt` is
+  reliable without a dedicated retest; `PermissionRequest` is the confirmed, direct signal.
+
+**Verdict for the state machine:** `PermissionRequest` maps directly to `running → waiting`
+(supersedes the spec's unobserved `PreToolUse`-based transition). `idle_prompt` maps to a
+session being caught up / awaiting user input generally — plausible as an additional `running →
+waiting` trigger distinct from permission-gating (e.g. Claude asking a clarifying question), worth
+folding into Phase 1's design rather than treated as `review`. No signal was found (or should be
+expected) for a distinct `review` state beyond `waiting` — `review` still has no confirmed hook
+source and remains a heuristic/manual-toggle question for Phase 1, but `waiting` itself is now
+fully resolved.
 
 ## CLI hooks vs. Agent SDK — ingestion decision
 
