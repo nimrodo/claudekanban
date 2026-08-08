@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
@@ -74,6 +74,10 @@ describe("createIngestHandler", () => {
     const db = testDb();
     const handler = createIngestHandler(db);
     handler({ body: { hook_event_name: "SessionStart", session_id: "parent-1", cwd: "/tmp" } } as Request, fakeRes());
+
+    const seen: string[] = [];
+    const listener = (id: string) => seen.push(id);
+    changeEmitter.on("session-changed", listener);
     handler(
       {
         body: {
@@ -87,10 +91,34 @@ describe("createIngestHandler", () => {
       } as Request,
       fakeRes()
     );
+    changeEmitter.off("session-changed", listener);
+
     const child = getSession(db, "agent-123");
     expect(child?.status).toBe("done");
     expect(child?.parentSessionId).toBe("parent-1");
     expect(child?.owner).toBe("Explore");
+    expect(seen).toEqual(["parent-1", "agent-123"]);
+  });
+
+  it("skips subagent synthesis when tool_input is missing on PostToolUse", () => {
+    const db = testDb();
+    const handler = createIngestHandler(db);
+    const res = fakeRes();
+    handler({ body: { hook_event_name: "SessionStart", session_id: "parent-1", cwd: "/tmp" } } as Request, fakeRes());
+    handler(
+      {
+        body: {
+          hook_event_name: "PostToolUse",
+          session_id: "parent-1",
+          cwd: "/tmp",
+          tool_name: "Agent",
+          tool_response: { agentId: "agent-123" },
+        },
+      } as Request,
+      res
+    );
+    expect(res.res.statusCode).toBe(200);
+    expect(getSession(db, "agent-123")).toBeUndefined();
   });
 
   it("emits session-changed on changeEmitter for every write", () => {

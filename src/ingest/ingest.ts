@@ -32,7 +32,7 @@ export function createIngestHandler(db: Database.Database) {
     });
     changeEmitter.emit("session-changed", payload.session_id);
 
-    if (payload.hook_event_name === "PostToolUse") {
+    if (payload.hook_event_name === "PostToolUse" && payload.tool_input) {
       const child = synthesizeSubagentSession(payload as PostToolUsePayload, receivedAt);
       if (child) {
         upsertSession(db, child);
