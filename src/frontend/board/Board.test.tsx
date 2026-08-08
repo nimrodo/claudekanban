@@ -37,4 +37,19 @@ describe("Board", () => {
     // Only one top-level card container should exist for the "running" column.
     expect(screen.getAllByText("main")).toHaveLength(1);
   });
+
+  it("renders a failed subagent as its own top-level card in the failed column", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "failed" }),
+        ]}
+      />
+    );
+
+    const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
+    expect(failedColumn).not.toBeNull();
+    expect(failedColumn && failedColumn.querySelector(".card-owner")?.textContent).toBe("Explore");
+  });
 });

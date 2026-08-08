@@ -1,18 +1,9 @@
 import type Database from "better-sqlite3";
+import type { SessionShape, SessionStatus } from "../domain/types.js";
 
-export type SessionStatus = "queued" | "running" | "waiting" | "done" | "failed";
+export type { SessionStatus };
 
-export interface Session {
-  id: string;
-  parentSessionId: string | null;
-  owner: string;
-  status: SessionStatus;
-  startedAt: string;
-  endedAt: string | null;
-  cwd: string;
-  model: string | null;
-  recap: string | null;
-}
+export type Session = SessionShape;
 
 interface SessionRow {
   id: string;

@@ -6,7 +6,10 @@ const STATUS_COLUMNS: SessionStatus[] = ["queued", "running", "waiting", "done",
 
 export function Board({ sessions }: { sessions: SessionDto[] }) {
   const byId = new Map(sessions.map((s) => [s.id, s]));
-  const topLevel = sessions.filter((s) => !s.parentSessionId || !byId.has(s.parentSessionId));
+  // A failed subagent is promoted to a top-level card in the "failed" column so its
+  // failure is visible at column level, instead of being buried inside its parent's card.
+  const isPromotedFailedChild = (s: SessionDto) => Boolean(s.parentSessionId) && byId.has(s.parentSessionId!) && s.status === "failed";
+  const topLevel = sessions.filter((s) => (!s.parentSessionId || !byId.has(s.parentSessionId) || isPromotedFailedChild(s)));
 
   return (
     <div className="board">
@@ -16,7 +19,11 @@ export function Board({ sessions }: { sessions: SessionDto[] }) {
           {topLevel
             .filter((s) => s.status === status)
             .map((s) => (
-              <SessionCard key={s.id} session={s} children={sessions.filter((c) => c.parentSessionId === s.id)} />
+              <SessionCard
+                key={s.id}
+                session={s}
+                children={isPromotedFailedChild(s) ? [] : sessions.filter((c) => c.parentSessionId === s.id && c.status !== "failed")}
+              />
             ))}
         </div>
       ))}

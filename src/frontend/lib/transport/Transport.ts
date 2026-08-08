@@ -1,16 +1,8 @@
-export type SessionStatus = "queued" | "running" | "waiting" | "done" | "failed";
+import type { SessionShape, SessionStatus } from "../../../domain/types.js";
 
-export interface SessionDto {
-  id: string;
-  parentSessionId: string | null;
-  owner: string;
-  status: SessionStatus;
-  startedAt: string;
-  endedAt: string | null;
-  cwd: string;
-  model: string | null;
-  recap: string | null;
-}
+export type { SessionStatus };
+
+export type SessionDto = SessionShape;
 
 export interface StateResponse {
   sessions: SessionDto[];
