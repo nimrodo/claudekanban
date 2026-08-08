@@ -18,10 +18,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
         pass
 server = http.server.HTTPServer(('127.0.0.1', 4317), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
-time.sleep(30)
+time.sleep(0.3)
 " &
 LISTENER_PID=$!
-sleep 0.5
+
+# Poll for server readiness with timeout (up to 5 seconds)
+for i in {1..50}; do
+  if curl -s -o /dev/null http://127.0.0.1:4317/hook 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
+done
 
 for script in hooks/on-session-start.sh hooks/on-tool-use.sh hooks/on-stop.sh hooks/on-permission-request.sh hooks/on-notification.sh; do
   echo '{"hook_event_name":"SessionStart","session_id":"smoke-test"}' | "$script"
