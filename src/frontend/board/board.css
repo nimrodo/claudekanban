@@ -1,0 +1,275 @@
+/*
+ * claudekanban board — "graphite console" theme
+ *
+ * Grounded in the subject: this is an operations console for watching live
+ * Claude Code agent sessions, structurally closer to a process monitor
+ * (ps --forest / k9s / git log --graph) than a generic project-management
+ * kanban. Columns read as terminal panes; parent/subagent relationships are
+ * drawn as a process-tree connector rather than a plain nested box.
+ *
+ * Tokens
+ * ------
+ * Color   #14161a bg / #1b1e25 panel / #262a33 hairline / #e9e6df text /
+ *         #8b8f9c muted; status accents: queued #6b7a99, running #d9a441,
+ *         waiting #9b7fd4, done #5fa876, failed #c05f4f.
+ * Type    IBM Plex Mono for structural/data text (headers, status, ids),
+ *         IBM Plex Sans for the owner name (the one prose-like label).
+ * Signature  tree-branch connector linking a parent card to its nested
+ *         subagent rows, echoing a unix process tree.
+ *
+ * Note: status text is not exposed via a data-attribute from the React
+ * components, so per-status accenting on cards is derived structurally
+ * (nth-child of .column, whose order is fixed: queued, running, waiting,
+ * done, failed). A subagent's own status can differ from its parent
+ * column's status; child rows are therefore styled neutrally rather than
+ * mis-colored — see .child-card below.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+
+:root {
+  --ck-bg: #14161a;
+  --ck-panel: #1b1e25;
+  --ck-panel-raised: #20232b;
+  --ck-border: #262a33;
+  --ck-border-soft: #20232b;
+  --ck-text: #e9e6df;
+  --ck-text-muted: #8b8f9c;
+  --ck-text-faint: #5c6170;
+
+  --ck-queued: #6b7a99;
+  --ck-running: #d9a441;
+  --ck-waiting: #9b7fd4;
+  --ck-done: #5fa876;
+  --ck-failed: #c05f4f;
+
+  --ck-font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --ck-font-sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ck-bg);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(217, 164, 65, 0.05), transparent),
+    radial-gradient(ellipse 700px 500px at 85% 110%, rgba(107, 122, 153, 0.05), transparent);
+  color: var(--ck-text);
+  font-family: var(--ck-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--ck-border);
+  min-height: 100vh;
+  padding: 1px;
+}
+
+.column {
+  background: var(--ck-bg);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: 2rem;
+}
+
+.column h2 {
+  margin: 0;
+  padding: 0.85rem 1rem 0.7rem;
+  font-family: var(--ck-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ck-text-muted);
+  border-bottom: 1px solid var(--ck-border);
+  position: sticky;
+  top: 0;
+  background: var(--ck-bg);
+  z-index: 1;
+}
+
+.column h2::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.55em;
+  border-radius: 999px;
+  background: var(--ck-text-faint);
+  vertical-align: middle;
+}
+
+/* Status accent per column, derived structurally (fixed column order). */
+.column:nth-child(1) h2::before {
+  background: var(--ck-queued);
+}
+.column:nth-child(2) h2::before {
+  background: var(--ck-running);
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18);
+}
+.column:nth-child(3) h2::before {
+  background: var(--ck-waiting);
+}
+.column:nth-child(4) h2::before {
+  background: var(--ck-done);
+}
+.column:nth-child(5) h2::before {
+  background: var(--ck-failed);
+}
+
+.column:nth-child(1) .card {
+  border-left-color: var(--ck-queued);
+}
+.column:nth-child(2) .card {
+  border-left-color: var(--ck-running);
+}
+.column:nth-child(3) .card {
+  border-left-color: var(--ck-waiting);
+}
+.column:nth-child(4) .card {
+  border-left-color: var(--ck-done);
+}
+.column:nth-child(5) .card {
+  border-left-color: var(--ck-failed);
+}
+
+/* Subtle live pulse on the running column only — respects reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .column:nth-child(2) .card {
+    animation: ck-running-glow 3.2s ease-in-out infinite;
+  }
+}
+
+@keyframes ck-running-glow {
+  0%, 100% {
+    box-shadow: -1px 0 0 0 var(--ck-running);
+  }
+  50% {
+    box-shadow: -1px 0 0 0 var(--ck-running), 0 0 14px -4px rgba(217, 164, 65, 0.45);
+  }
+}
+
+.card {
+  margin: 0.6rem 0.85rem;
+  padding: 0.75rem 0.85rem 0.7rem;
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-left: 3px solid var(--ck-text-faint);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.card-owner {
+  font-family: var(--ck-font-sans);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--ck-text);
+  order: 1;
+}
+
+.card-id {
+  font-family: var(--ck-font-mono);
+  font-size: 0.72rem;
+  color: var(--ck-text-faint);
+  letter-spacing: 0.02em;
+  order: 2;
+}
+
+.card-status {
+  font-family: var(--ck-font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ck-text-muted);
+  order: 3;
+}
+
+/* Subagent tree: draws a process-tree connector from the parent card down
+   into its nested children, echoing `ps --forest` / `git log --graph`. */
+.card-children {
+  order: 4;
+  margin-top: 0.4rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--ck-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.child-card {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem 0.4rem 1.35rem;
+  background: var(--ck-panel-raised);
+  border: 1px solid var(--ck-border-soft);
+  border-radius: 3px;
+  font-size: 0.78rem;
+}
+
+.child-card::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 50%;
+  width: 0.5rem;
+  border-left: 1px solid var(--ck-text-faint);
+  border-bottom: 1px solid var(--ck-text-faint);
+  border-bottom-left-radius: 4px;
+}
+
+.child-card:last-child::before {
+  bottom: 50%;
+}
+
+.child-card:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  bottom: -0.4rem;
+  border-left: 1px solid var(--ck-text-faint);
+}
+
+.child-card .card-owner {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.child-card .card-status {
+  font-size: 0.62rem;
+  color: var(--ck-text-faint);
+}
+
+@media (max-width: 900px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .column h2 {
+    position: static;
+  }
+}
+
+/* Accessibility: visible keyboard focus for any future interactive elements. */
+.card:focus-visible,
+.child-card:focus-visible {
+  outline: 2px solid var(--ck-running);
+  outline-offset: 2px;
+}
