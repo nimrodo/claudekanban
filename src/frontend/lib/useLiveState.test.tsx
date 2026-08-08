@@ -59,4 +59,52 @@ describe("useLiveState", () => {
 
     await waitFor(() => expect(result.current.sessions).toHaveLength(2));
   });
+
+  it("tears down the subscription and ignores in-flight getState on unmount", async () => {
+    let unsubscribed = false;
+    let resolveSecondFetch: ((state: { sessions: SessionDto[] }) => void) | null = null;
+    let getStateCallCount = 0;
+    let listener: ((event: StreamEvent) => void) | null = null;
+
+    const transport: Transport = {
+      getState: () => {
+        getStateCallCount += 1;
+        if (getStateCallCount === 1) {
+          return Promise.resolve({ sessions: [makeSession("sess-1")] });
+        }
+        // Second call (triggered by the emitted event) resolves only when we say so.
+        return new Promise((resolve) => {
+          resolveSecondFetch = resolve;
+        });
+      },
+      subscribe: (onEvent) => {
+        listener = onEvent;
+        return () => {
+          unsubscribed = true;
+          listener = null;
+        };
+      },
+    };
+
+    const { result, unmount } = renderHook(() => useLiveState(transport));
+    await waitFor(() => expect(result.current.sessions).toHaveLength(1));
+
+    // Trigger the second, slow-resolving getState() call, then unmount before it resolves.
+    listener?.({ type: "session-changed", entityId: "sess-2" });
+    await waitFor(() => expect(getStateCallCount).toBe(2));
+
+    unmount();
+    expect(unsubscribed).toBe(true);
+
+    // Resolve the in-flight fetch after unmount; the hook must not update state or throw/warn.
+    expect(() => {
+      resolveSecondFetch?.({ sessions: [makeSession("sess-1"), makeSession("sess-2")] });
+    }).not.toThrow();
+
+    // Allow the resolved promise's .then() to run.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(result.current.sessions).toHaveLength(1);
+  });
 });
