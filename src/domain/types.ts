@@ -4,6 +4,7 @@ export interface SessionShape {
   id: string;
   parentSessionId: string | null;
   owner: string;
+  title: string | null;
   status: SessionStatus;
   startedAt: string;
   endedAt: string | null;

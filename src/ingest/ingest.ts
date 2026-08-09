@@ -23,6 +23,7 @@ export function createIngestHandler(db: Database.Database) {
       id: payload.session_id,
       parentSessionId: existing?.parentSessionId ?? null,
       owner: existing?.owner ?? "main",
+      title: existing?.title ?? null,
       status,
       startedAt: existing?.startedAt ?? receivedAt,
       endedAt: status === "done" || status === "failed" ? receivedAt : null,

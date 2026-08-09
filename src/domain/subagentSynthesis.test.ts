@@ -7,7 +7,7 @@ function payload(overrides: Partial<PostToolUsePayload>): PostToolUsePayload {
     session_id: "parent-1",
     cwd: "/tmp/project",
     tool_name: "Agent",
-    tool_input: { subagent_type: "Explore" },
+    tool_input: { subagent_type: "Explore", description: "Find TODO occurrences" },
     tool_response: { agentId: "agent-123" },
     ...overrides,
   };
@@ -28,6 +28,7 @@ describe("synthesizeSubagentSession", () => {
       id: "agent-123",
       parentSessionId: "parent-1",
       owner: "Explore",
+      title: "Find TODO occurrences",
       status: "done",
       startedAt: "2026-08-08T10:00:05.000Z",
       endedAt: "2026-08-08T10:00:05.000Z",
@@ -52,5 +53,21 @@ describe("synthesizeSubagentSession", () => {
 
   it("recognizes tool_name \"Task\" as well as \"Agent\"", () => {
     expect(synthesizeSubagentSession(payload({ tool_name: "Task" }), "2026-08-08T10:00:05.000Z")).not.toBeNull();
+  });
+
+  it("sets title to null when description is missing", () => {
+    const child = synthesizeSubagentSession(
+      payload({ tool_input: { subagent_type: "Explore" } }),
+      "2026-08-08T10:00:05.000Z"
+    );
+    expect(child?.title).toBeNull();
+  });
+
+  it("sets title to null when description is an empty string", () => {
+    const child = synthesizeSubagentSession(
+      payload({ tool_input: { subagent_type: "Explore", description: "" } }),
+      "2026-08-08T10:00:05.000Z"
+    );
+    expect(child?.title).toBeNull();
   });
 });

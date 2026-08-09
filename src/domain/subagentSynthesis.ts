@@ -5,7 +5,7 @@ export interface PostToolUsePayload {
   session_id: string;
   cwd: string;
   tool_name: string;
-  tool_input: { subagent_type?: string; [key: string]: unknown };
+  tool_input: { subagent_type?: string; description?: string; [key: string]: unknown };
   tool_response?: { agentId?: string; error?: unknown; [key: string]: unknown };
 }
 
@@ -19,6 +19,7 @@ export function synthesizeSubagentSession(payload: PostToolUsePayload, receivedA
     id: agentId,
     parentSessionId: payload.session_id,
     owner: payload.tool_input.subagent_type ?? "unknown",
+    title: payload.tool_input.description || null,
     status: failed ? "failed" : "done",
     startedAt: receivedAt,
     endedAt: receivedAt,

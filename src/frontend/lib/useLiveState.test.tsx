@@ -8,6 +8,7 @@ function makeSession(id: string): SessionDto {
     id,
     parentSessionId: null,
     owner: "main",
+    title: null,
     status: "running",
     startedAt: "2026-08-08T10:00:00.000Z",
     endedAt: null,

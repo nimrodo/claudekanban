@@ -8,6 +8,7 @@ function session(overrides: Partial<SessionDto>): SessionDto {
     id: "sess-1",
     parentSessionId: null,
     owner: "main",
+    title: null,
     status: "running",
     startedAt: "2026-08-08T10:00:00.000Z",
     endedAt: null,
@@ -36,6 +37,19 @@ describe("Board", () => {
     expect(screen.getByText("Explore")).toBeInTheDocument();
     // Only one top-level card container should exist for the "running" column.
     expect(screen.getAllByText("main")).toHaveLength(1);
+  });
+
+  it("shows a subagent's title alongside its owner when present", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", title: "Find TODO occurrences", parentSessionId: "parent-1", status: "done" }),
+        ]}
+      />
+    );
+    expect(screen.getByText("Find TODO occurrences")).toBeInTheDocument();
+    expect(screen.getByText("Explore")).toBeInTheDocument();
   });
 
   it("renders a failed subagent as its own top-level card in the failed column", () => {

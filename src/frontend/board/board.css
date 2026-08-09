@@ -259,14 +259,30 @@ body {
 .child-card {
   position: relative;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.4rem 0.6rem 0.4rem 1.35rem;
   background: var(--ck-panel-raised);
   border: 1px solid var(--ck-border-soft);
   border-radius: 3px;
   font-size: 0.78rem;
+}
+
+.child-title {
+  font-family: var(--ck-font-sans);
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--ck-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.child-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .child-card::before {

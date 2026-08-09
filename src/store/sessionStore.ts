@@ -9,6 +9,7 @@ interface SessionRow {
   id: string;
   parent_session_id: string | null;
   owner: string;
+  title: string | null;
   status: SessionStatus;
   started_at: string;
   ended_at: string | null;
@@ -22,6 +23,7 @@ function rowToSession(row: SessionRow): Session {
     id: row.id,
     parentSessionId: row.parent_session_id,
     owner: row.owner,
+    title: row.title,
     status: row.status,
     startedAt: row.started_at,
     endedAt: row.ended_at,
@@ -33,8 +35,8 @@ function rowToSession(row: SessionRow): Session {
 
 export function upsertSession(db: Database.Database, session: Session): void {
   db.prepare(
-    `INSERT INTO session (id, parent_session_id, owner, status, started_at, ended_at, cwd, model, recap)
-     VALUES (@id, @parentSessionId, @owner, @status, @startedAt, @endedAt, @cwd, @model, @recap)
+    `INSERT INTO session (id, parent_session_id, owner, title, status, started_at, ended_at, cwd, model, recap)
+     VALUES (@id, @parentSessionId, @owner, @title, @status, @startedAt, @endedAt, @cwd, @model, @recap)
      ON CONFLICT(id) DO UPDATE SET
        status = excluded.status,
        ended_at = excluded.ended_at,

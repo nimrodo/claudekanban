@@ -17,6 +17,7 @@ const baseSession: Session = {
   id: "sess-1",
   parentSessionId: null,
   owner: "main",
+  title: null,
   status: "running",
   startedAt: "2026-08-08T10:00:00.000Z",
   endedAt: null,
@@ -42,6 +43,12 @@ describe("sessionStore", () => {
       endedAt: "2026-08-08T10:05:00.000Z",
       recap: "All done.",
     });
+  });
+
+  it("persists title through getSession", () => {
+    const db = testDb();
+    upsertSession(db, { ...baseSession, title: "Find TODO occurrences" });
+    expect(getSession(db, "sess-1")?.title).toBe("Find TODO occurrences");
   });
 
   it("lists sessions ordered by startedAt ascending", () => {

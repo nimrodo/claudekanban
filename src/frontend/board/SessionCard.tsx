@@ -15,8 +15,13 @@ export function SessionCard({ session, children }: { session: SessionDto; childr
         <div className="card-children">
           {children.map((child) => (
             <div key={child.id} className="child-card">
-              <span className="card-owner">{child.owner}</span>
-              <span className="card-status">{child.status}</span>
+              {child.title && (
+                <div className="child-title" title={child.title}>{child.title}</div>
+              )}
+              <div className="child-meta">
+                <span className="card-owner">{child.owner}</span>
+                <span className="card-status">{child.status}</span>
+              </div>
             </div>
           ))}
         </div>
