@@ -23,6 +23,7 @@ function fakeTransport(initial: SessionDto[]): { transport: Transport; emit: (e:
   let listener: ((event: StreamEvent) => void) | null = null;
   const transport: Transport = {
     getState: async () => ({ sessions: state }),
+    getSessionDetail: () => Promise.reject(new Error("not used by useLiveState")),
     subscribe: (onEvent) => {
       listener = onEvent;
       return () => {
@@ -78,6 +79,7 @@ describe("useLiveState", () => {
           pending.resolve = resolve;
         });
       },
+      getSessionDetail: () => Promise.reject(new Error("not used by useLiveState")),
       subscribe: (onEvent) => {
         listener = onEvent;
         return () => {
@@ -124,6 +126,7 @@ describe("useLiveState", () => {
           resolvers.push(resolve);
         });
       },
+      getSessionDetail: () => Promise.reject(new Error("not used by useLiveState")),
       subscribe: (onEvent) => {
         listener = onEvent;
         return () => {

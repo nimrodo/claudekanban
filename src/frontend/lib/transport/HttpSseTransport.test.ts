@@ -47,4 +47,25 @@ describe("HttpSseTransport", () => {
     unsubscribe();
     expect(instance.close).toHaveBeenCalled();
   });
+
+  it("getSessionDetail fetches /api/sessions/:id and returns parsed JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ session: { id: "sess-1" }, events: [{ id: 1, sessionId: "sess-1", ts: "t", type: "SessionStart", payload: "{}" }] }),
+      }))
+    );
+    const transport = new HttpSseTransport();
+    const detail = await transport.getSessionDetail("sess-1");
+    expect(fetch).toHaveBeenCalledWith("/api/sessions/sess-1");
+    expect(detail.session).toEqual({ id: "sess-1" });
+    expect(detail.events).toHaveLength(1);
+  });
+
+  it("getSessionDetail throws on a non-ok response", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404, json: async () => ({}) })));
+    const transport = new HttpSseTransport();
+    await expect(transport.getSessionDetail("missing")).rejects.toThrow("GET /api/sessions/missing failed: 404");
+  });
 });

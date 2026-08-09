@@ -1,4 +1,4 @@
-import type { StateResponse, StreamEvent, Transport } from "./Transport.js";
+import type { SessionDetailResponse, StateResponse, StreamEvent, Transport } from "./Transport.js";
 
 export class HttpSseTransport implements Transport {
   constructor(private readonly baseUrl: string = "") {}
@@ -7,6 +7,12 @@ export class HttpSseTransport implements Transport {
     const res = await fetch(`${this.baseUrl}/api/state`);
     if (!res.ok) throw new Error(`GET /api/state failed: ${res.status}`);
     return res.json() as Promise<StateResponse>;
+  }
+
+  async getSessionDetail(id: string): Promise<SessionDetailResponse> {
+    const res = await fetch(`${this.baseUrl}/api/sessions/${id}`);
+    if (!res.ok) throw new Error(`GET /api/sessions/${id} failed: ${res.status}`);
+    return res.json() as Promise<SessionDetailResponse>;
   }
 
   subscribe(onEvent: (event: StreamEvent) => void): () => void {
