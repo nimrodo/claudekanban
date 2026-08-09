@@ -39,6 +39,7 @@ export function upsertSession(db: Database.Database, session: Session): void {
      VALUES (@id, @parentSessionId, @owner, @title, @status, @startedAt, @endedAt, @cwd, @model, @recap)
      ON CONFLICT(id) DO UPDATE SET
        status = excluded.status,
+       title = excluded.title,
        ended_at = excluded.ended_at,
        recap = excluded.recap`
   ).run(session);

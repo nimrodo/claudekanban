@@ -45,6 +45,13 @@ describe("sessionStore", () => {
     });
   });
 
+  it("updates title on conflict when a later upsert sets a new value", () => {
+    const db = testDb();
+    upsertSession(db, { ...baseSession, title: null });
+    upsertSession(db, { ...baseSession, title: "Find TODO occurrences" });
+    expect(getSession(db, "sess-1")?.title).toBe("Find TODO occurrences");
+  });
+
   it("persists title through getSession", () => {
     const db = testDb();
     upsertSession(db, { ...baseSession, title: "Find TODO occurrences" });
