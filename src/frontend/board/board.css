@@ -206,11 +206,22 @@ body {
   gap: 0.3rem;
 }
 
-.card-owner {
+.card-cwd {
   font-family: var(--ck-font-sans);
   font-weight: 600;
   font-size: 0.88rem;
   color: var(--ck-text);
+  order: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-owner {
+  font-family: var(--ck-font-mono);
+  font-size: 0.7rem;
+  color: var(--ck-text-muted);
+  letter-spacing: 0.03em;
   order: 1;
 }
 
