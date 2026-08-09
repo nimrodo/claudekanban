@@ -3,7 +3,15 @@ import type Database from "better-sqlite3";
 import { insertEvent } from "../store/eventStore.js";
 import { upsertSession, getSession } from "../store/sessionStore.js";
 import { deriveStatus, type HookPayload } from "../domain/stateMachine.js";
-import { synthesizeSubagentSession, type PostToolUsePayload } from "../domain/subagentSynthesis.js";
+import {
+  synthesizeSubagentSession,
+  synthesizeSubagentStart,
+  synthesizeSubagentStop,
+  mergeSubagentTitle,
+  type PostToolUsePayload,
+  type SubagentStartPayload,
+  type SubagentStopPayload,
+} from "../domain/subagentSynthesis.js";
 import { changeEmitter } from "../domain/changeEmitter.js";
 
 export function createIngestHandler(db: Database.Database) {
@@ -33,11 +41,45 @@ export function createIngestHandler(db: Database.Database) {
     });
     changeEmitter.emit("session-changed", payload.session_id);
 
-    if (payload.hook_event_name === "PostToolUse" && payload.tool_input) {
-      const child = synthesizeSubagentSession(payload as PostToolUsePayload, receivedAt);
+    if (payload.hook_event_name === "SubagentStart") {
+      const startPayload = payload as SubagentStartPayload;
+      const existingChild = startPayload.agent_id ? getSession(db, startPayload.agent_id) : undefined;
+      const child = synthesizeSubagentStart(existingChild, startPayload, receivedAt);
       if (child) {
         upsertSession(db, child);
         changeEmitter.emit("session-changed", child.id);
+      }
+    }
+
+    if (payload.hook_event_name === "SubagentStop") {
+      const stopPayload = payload as SubagentStopPayload;
+      if (stopPayload.agent_id && stopPayload.agent_type) {
+        const existingChild = getSession(db, stopPayload.agent_id);
+        if (existingChild) {
+          const updated = synthesizeSubagentStop(existingChild, stopPayload, receivedAt);
+          if (updated) {
+            upsertSession(db, updated);
+            changeEmitter.emit("session-changed", updated.id);
+          }
+        }
+      }
+    }
+
+    if (payload.hook_event_name === "PostToolUse" && payload.tool_input) {
+      const agentId = payload.tool_response?.agentId;
+      if (agentId) {
+        const existingChild = getSession(db, agentId);
+        if (existingChild) {
+          const merged = mergeSubagentTitle(existingChild, payload as PostToolUsePayload, receivedAt);
+          upsertSession(db, merged);
+          changeEmitter.emit("session-changed", merged.id);
+        } else {
+          const child = synthesizeSubagentSession(payload as PostToolUsePayload, receivedAt);
+          if (child) {
+            upsertSession(db, child);
+            changeEmitter.emit("session-changed", child.id);
+          }
+        }
       }
     }
 
