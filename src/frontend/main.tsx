@@ -1,13 +1,24 @@
 import { createRoot } from "react-dom/client";
+import { useState } from "react";
 import { Board } from "./board/Board.js";
+import { Drawer } from "./detail/Drawer.js";
 import { useLiveState } from "./lib/useLiveState.js";
+import { useSessionDetail } from "./lib/useSessionDetail.js";
 import { HttpSseTransport } from "./lib/transport/HttpSseTransport.js";
 
 const transport = new HttpSseTransport();
 
 function App() {
   const { sessions } = useLiveState(transport);
-  return <Board sessions={sessions} />;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { detail, loading } = useSessionDetail(transport, selectedId);
+
+  return (
+    <>
+      <Board sessions={sessions} onSelect={setSelectedId} />
+      <Drawer open={selectedId !== null} detail={detail} loading={loading} onClose={() => setSelectedId(null)} />
+    </>
+  );
 }
 
 const container = document.getElementById("root");

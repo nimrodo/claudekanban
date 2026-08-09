@@ -1,12 +1,34 @@
+import type { KeyboardEvent } from "react";
 import type { SessionDto } from "../lib/transport/Transport.js";
 
 function cwdLabel(cwd: string): string {
   return cwd.replace(/\/+$/, "").split("/").pop() || cwd;
 }
 
-export function SessionCard({ session, children }: { session: SessionDto; children: SessionDto[] }) {
+function handleActivateKey(e: KeyboardEvent, onActivate: () => void) {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    onActivate();
+  }
+}
+
+export function SessionCard({
+  session,
+  children,
+  onSelect,
+}: {
+  session: SessionDto;
+  children: SessionDto[];
+  onSelect: (id: string) => void;
+}) {
   return (
-    <div className="card">
+    <div
+      className="card"
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(session.id)}
+      onKeyDown={(e) => handleActivateKey(e, () => onSelect(session.id))}
+    >
       <div className="card-cwd" title={session.cwd}>{cwdLabel(session.cwd)}</div>
       <div className="card-owner">{session.owner}</div>
       <div className="card-id">{session.id.slice(0, 8)}</div>
@@ -14,7 +36,20 @@ export function SessionCard({ session, children }: { session: SessionDto; childr
       {children.length > 0 && (
         <div className="card-children">
           {children.map((child) => (
-            <div key={child.id} className="child-card">
+            <div
+              key={child.id}
+              className="child-card"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(child.id);
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                handleActivateKey(e, () => onSelect(child.id));
+              }}
+            >
               {child.title && (
                 <div className="child-title" title={child.title}>{child.title}</div>
               )}

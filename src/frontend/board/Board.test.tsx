@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Board } from "./Board.js";
 import type { SessionDto } from "../lib/transport/Transport.js";
 
@@ -21,7 +21,7 @@ function session(overrides: Partial<SessionDto>): SessionDto {
 
 describe("Board", () => {
   it("renders a top-level session under its status column", () => {
-    render(<Board sessions={[session({ id: "sess-1", status: "running" })]} />);
+    render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
     expect(screen.getByRole("heading", { name: "running" })).toBeInTheDocument();
   });
 
@@ -32,6 +32,7 @@ describe("Board", () => {
           session({ id: "parent-1", owner: "main", status: "running" }),
           session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "done" }),
         ]}
+        onSelect={() => {}}
       />
     );
     expect(screen.getByText("Explore")).toBeInTheDocument();
@@ -46,6 +47,7 @@ describe("Board", () => {
           session({ id: "parent-1", owner: "main", status: "running" }),
           session({ id: "child-1", owner: "Explore", title: "Find TODO occurrences", parentSessionId: "parent-1", status: "done" }),
         ]}
+        onSelect={() => {}}
       />
     );
     expect(screen.getByText("Find TODO occurrences")).toBeInTheDocument();
@@ -59,11 +61,35 @@ describe("Board", () => {
           session({ id: "parent-1", owner: "main", status: "running" }),
           session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "failed" }),
         ]}
+        onSelect={() => {}}
       />
     );
 
     const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
     expect(failedColumn).not.toBeNull();
     expect(failedColumn && failedColumn.querySelector(".card-owner")?.textContent).toBe("Explore");
+  });
+
+  it("calls onSelect with a top-level session's id when its card is clicked", () => {
+    const onSelect = vi.fn();
+    render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={onSelect} />);
+    fireEvent.click(screen.getByText("tmp"));
+    expect(onSelect).toHaveBeenCalledWith("sess-1");
+  });
+
+  it("calls onSelect with a subagent's id (not its parent's) when its child card is clicked", () => {
+    const onSelect = vi.fn();
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "done" }),
+        ]}
+        onSelect={onSelect}
+      />
+    );
+    fireEvent.click(screen.getByText("Explore"));
+    expect(onSelect).toHaveBeenCalledWith("child-1");
+    expect(onSelect).not.toHaveBeenCalledWith("parent-1");
   });
 });
