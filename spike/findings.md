@@ -53,6 +53,17 @@ below).
   from an independent event stream the way the spec implies. This is a real design conflict
   that needs resolving before Phase 1 ingest logic is written — flagging it rather than
   silently reinterpreting the spec.
+- **Task title field (found during Phase 1 live testing):** the same `PostToolUse.tool_input`
+  that carries `subagent_type` also carries a `description` field — a short, human-written
+  summary of what the subagent was asked to do (e.g. `"Find TODO occurrences"`), confirmed live
+  in `spike/captures/agent-sdk.jsonl`. This is a free, already-available field for labeling
+  subagent cards with what they're actually doing, distinct from `owner` (which only names the
+  subagent *type*, e.g. `"Explore"`). No equivalent field exists for the **main** session: no
+  `UserPromptSubmit` event (or any other event carrying the user's initial prompt) has ever been
+  observed in a capture — `SessionStart` carries only `session_id`/`cwd`/`model`/`source`. A
+  main-session task title would require either a dedicated retest for a `UserPromptSubmit` hook
+  (unconfirmed whether Claude Code exposes one) or reading the transcript file at
+  `transcript_path`, which is a larger, unvalidated change — not a simple payload-field read.
 
 ## Stop payload / recap
 

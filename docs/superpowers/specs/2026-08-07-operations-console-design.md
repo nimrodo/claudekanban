@@ -69,7 +69,7 @@ Session is the sole kanban card, including subagents. No Task, no separate Agent
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| **Session** | id, parent_session_id (nullable — set for subagents), owner (subagent_type from the hook payload, or a generic fallback for the main session / when unavailable), status, started_at, ended_at, cwd, model, recap (text, nullable) | One Claude Code invocation, main or subagent. `recap` is populated from the `Stop` hook payload's final message, verbatim, when status becomes `done`. |
+| **Session** | id, parent_session_id (nullable — set for subagents), owner (subagent_type from the hook payload, or a generic fallback for the main session / when unavailable), title (text, nullable — subagent's `tool_input.description`; unset for the main session, no confirmed hook field carries the user's initial prompt, see `spike/findings.md` "Subagent linkage"), status, started_at, ended_at, cwd, model, recap (text, nullable) | One Claude Code invocation, main or subagent. `recap` is populated from the `Stop` hook payload's final message, verbatim, when status becomes `done`. |
 | **Event** | id, session_id, ts, type (hook name), payload(json) | Append-only log; the source of truth for the timeline. Never mutated. |
 | **Intervention** | id, session_id, type (approval_request/retry/resume/cancel/guidance), origin ('system'\|'human'), status (pending/applied/resolved), payload(json), created_at, resolved_at | Merged Approval+Intervention. System-originated rows (e.g. a `PreToolUse` block) are resolved by a human action; human-originated rows (retry/cancel/guidance) are applied by the session-side poller. Schema ships in v1; the endpoints/poller that act on it are v2. |
 
@@ -109,7 +109,7 @@ Minimal responsibilities, no more. v1 (read-only) endpoints only; v2 endpoints n
 ## Frontend design
 
 Minimal responsibilities for v1:
-- Board view: columns = Session status; every session (main or subagent) is a card, showing `owner` badge, elapsed time, last event summary, and — via `parent_session_id` — visual grouping under its parent.
+- Board view: columns = Session status; every session (main or subagent) is a card, showing `owner` badge, elapsed time, last event summary, and — via `parent_session_id` — visual grouping under its parent. **Revised during Phase 1 live testing:** `owner` alone was not enough to tell sessions apart (it's a hardcoded `"main"` for every top-level session), so the card headline was changed to the `cwd` basename instead, with `owner` demoted to a secondary badge. Subagent cards should show `title` (see Domain model) once Phase 2 adds it, for the same reason — `owner` only names the subagent *type* (e.g. `"Explore"`), not what it was asked to do.
 - Detail drawer: opens on card click, shows session metadata + live timeline (events newest-first); shows `recap` prominently when status=done.
 - One data layer: a small client (`useLiveState` hook or equivalent) that does initial fetch + SSE subscribe + local patch-apply; no separate state management library needed at this scope.
 - No routing complexity needed beyond board vs. drawer-open (drawer can be a URL param for shareability, still MVP-simple).
@@ -163,10 +163,10 @@ claudekanban/
 
 **Phase 2 — Detail view, timeline, recap**
 - Goals: click-through detail drawer with full event timeline; recap shown when done.
-- Deliverables: `GET /api/sessions/:id`, drawer UI, `recap` column populated from `Stop` payload and rendered in the drawer (and/or on the card) once status=done.
-- Likely files: `src/api`, `src/frontend/detail`.
-- Acceptance criteria: opening a session shows every event in order with timestamps; new events append live while drawer is open; a done session shows its recap text without further clicks.
-- Manual test: open drawer mid-session, watch events stream in; let it finish and confirm recap appears.
+- Deliverables: `GET /api/sessions/:id`, drawer UI, `recap` column populated from `Stop` payload and rendered in the drawer (and/or on the card) once status=done. Also add `session.title`: populate it from `PostToolUse.tool_input.description` during subagent synthesis (see Domain model, and `spike/findings.md` "Subagent linkage" for the confirmed field), and render it on subagent cards/in the drawer. Main-session `title` stays unset in Phase 2 — no confirmed hook field carries the user's initial prompt (see Open questions).
+- Likely files: `src/api`, `src/frontend/detail`, `src/domain/subagentSynthesis.ts`.
+- Acceptance criteria: opening a session shows every event in order with timestamps; new events append live while drawer is open; a done session shows its recap text without further clicks; a spawned subagent's card/drawer shows its `title` (task description), not just its `owner` (subagent type).
+- Manual test: open drawer mid-session, watch events stream in; let it finish and confirm recap appears; spawn a subagent and confirm its card shows what it was asked to do, not just its type.
 
 **Phase 3 (v2) — Intervention controls**
 - Goals: DB-mediated approve/retry/resume/cancel/guidance loop closes end-to-end. Only start once Phase 0/1/2 are in real use and the polling-viability question has a real answer.
@@ -206,3 +206,5 @@ claudekanban/
    **Partially resolved (follow-up spike):** see spike/findings.md ("Review-state signal") — `PermissionRequest` is a confirmed, direct `running → waiting` signal (fires before the on-screen approval prompt, carries `tool_name`/`tool_input`), superseding the spec's originally-assumed but never-observed `PreToolUse` trigger. `Notification` with `notification_type: "idle_prompt"` is a second confirmed `waiting`-adjacent signal (Claude caught up, awaiting user input) — worth folding into Phase 1. A distinct `review` state (as opposed to `waiting`) still has no confirmed hook source and remains a heuristic/manual-toggle question.
 5. Poll interval for `poll-interventions.sh` (tradeoff: responsiveness vs. overhead) — proposed 2s default, worth confirming acceptable.
 6. Whether Task creation is manual (developer names a task, then attaches sessions) or auto-created per session with a title inferred from the first prompt — affects Phase 1/2 scope. (Note: superseded by dropping Task from v1 — retained here as a v2 consideration if Task ever comes back.)
+7. Is there any hook event/field that carries the **main session's** initial task/prompt, for use as a card title? (Found during Phase 1 live testing — see `spike/findings.md` "Subagent linkage".)
+   **Not resolved.** No `UserPromptSubmit` event (or equivalent) has been observed in any capture; `SessionStart` carries only `session_id`/`cwd`/`model`/`source`. Subagent cards get a real title for free via `PostToolUse.tool_input.description` (Phase 2), but the main session has no equivalent confirmed field. Options for a future spike: retest for a `UserPromptSubmit` hook, or read the first user message from the transcript file at `transcript_path`. Until resolved, the main-session card headline stays the `cwd` basename (see Frontend design).
