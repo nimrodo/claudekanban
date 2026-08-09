@@ -25,16 +25,21 @@ function fakeTransport(): {
   transport: Transport;
   emit: (e: StreamEvent) => void;
   resolveNext: (detail: SessionDetailResponse) => void;
+  rejectNext: (err: unknown) => void;
   getDetailCallCount: () => number;
 } {
   let listener: ((event: StreamEvent) => void) | null = null;
   let callCount = 0;
   const resolvers: Array<(detail: SessionDetailResponse) => void> = [];
+  const rejecters: Array<(err: unknown) => void> = [];
   const transport: Transport = {
     getState: async () => ({ sessions: [] }),
     getSessionDetail: (_id: string) => {
       callCount += 1;
-      return new Promise((resolve) => resolvers.push(resolve));
+      return new Promise((resolve, reject) => {
+        resolvers.push(resolve);
+        rejecters.push(reject);
+      });
     },
     subscribe: (onEvent) => {
       listener = onEvent;
@@ -47,6 +52,7 @@ function fakeTransport(): {
     transport,
     emit: (event) => listener?.(event),
     resolveNext: (detail) => resolvers.shift()?.(detail),
+    rejectNext: (err) => rejecters.shift()?.(err),
     getDetailCallCount: () => callCount,
   };
 }
@@ -55,7 +61,7 @@ describe("useSessionDetail", () => {
   it("returns no detail and not loading when sessionId is null", () => {
     const { transport } = fakeTransport();
     const { result } = renderHook(() => useSessionDetail(transport, null));
-    expect(result.current).toEqual({ detail: null, loading: false });
+    expect(result.current).toEqual({ detail: null, loading: false, error: null });
   });
 
   it("fetches and loads detail when given a sessionId", async () => {
@@ -90,6 +96,17 @@ describe("useSessionDetail", () => {
     // Give any (incorrect) refetch a chance to fire, then assert it didn't.
     await Promise.resolve();
     expect(helper.getDetailCallCount()).toBe(1);
+  });
+
+  it("sets an error and stops loading when the fetch rejects", async () => {
+    const helper = fakeTransport();
+    const { result } = renderHook(() => useSessionDetail(helper.transport, "sess-1"));
+    expect(result.current.loading).toBe(true);
+
+    helper.rejectNext(new Error("Not found"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe("Not found");
+    expect(result.current.detail).toBeNull();
   });
 
   it("unsubscribes on unmount", () => {
