@@ -336,3 +336,24 @@ body {
   outline: 2px solid var(--ck-running);
   outline-offset: 2px;
 }
+
+/* Per-card status accent for subagent cards — a child can now genuinely be
+   "running" for real elapsed time (SubagentStart/SubagentStop), unlike Phase 1
+   where a child was always already done/failed by the time it appeared. */
+.child-card[data-status="running"] {
+  border-left: 2px solid var(--ck-running);
+}
+
+.child-card[data-status="done"] {
+  border-left: 2px solid var(--ck-done);
+}
+
+.child-card[data-status="failed"] {
+  border-left: 2px solid var(--ck-failed);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .child-card[data-status="running"] {
+    animation: ck-running-glow 3.2s ease-in-out infinite;
+  }
+}

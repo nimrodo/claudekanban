@@ -39,6 +39,7 @@ export function SessionCard({
             <div
               key={child.id}
               className="child-card"
+              data-status={child.status}
               role="button"
               tabIndex={0}
               onClick={(e) => {

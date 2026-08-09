@@ -54,6 +54,20 @@ describe("Board", () => {
     expect(screen.getByText("Explore")).toBeInTheDocument();
   });
 
+  it("sets data-status on a child card matching its own status", () => {
+    const { container } = render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "running" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const childCard = container.querySelector(".child-card");
+    expect(childCard?.getAttribute("data-status")).toBe("running");
+  });
+
   it("renders a failed subagent as its own top-level card in the failed column", () => {
     render(
       <Board
