@@ -1,0 +1,281 @@
+/*
+ * Detail drawer — the console's "attach" view: sliding over the board the
+ * way a `tmux` pane or `less +F` follows a single process once you focus
+ * it. Same graphite palette and type system as board.css; the signature
+ * element here is the timeline spine (--timeline-connector), a vertical
+ * rail threading every event dot together — a log-stream echo of the
+ * board's own process-tree connector.
+ */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 13, 0.55);
+  backdrop-filter: blur(1px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.drawer-overlay[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  background: var(--ck-panel);
+  border-left: 1px solid var(--ck-border);
+  box-shadow: -24px 0 48px -24px rgba(0, 0, 0, 0.5);
+  padding: 1.1rem 1.25rem 2rem;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0.35, 1);
+  z-index: 11;
+  font-family: var(--ck-font-sans);
+  color: var(--ck-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawer-overlay {
+    transition-duration: 0.01ms;
+  }
+}
+
+.drawer[data-open="true"] {
+  transform: translateX(0);
+}
+
+.drawer-loading {
+  color: var(--ck-text-muted);
+  font-family: var(--ck-font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  padding-top: 2.5rem;
+  text-align: center;
+}
+
+.drawer-loading::before {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 0 auto 0.6rem;
+  border-radius: 999px;
+  background: var(--ck-running);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .drawer-loading::before {
+    animation: ck-drawer-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes ck-drawer-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--ck-border);
+}
+
+.drawer-title {
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.drawer-subtitle {
+  font-family: var(--ck-font-mono);
+  font-size: 0.76rem;
+  color: var(--ck-text-muted);
+  margin-top: 0.2rem;
+  word-break: break-all;
+}
+
+.drawer-close {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--ck-text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.drawer-close:hover {
+  color: var(--ck-text);
+  border-color: var(--ck-border);
+}
+
+.drawer-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45rem 0.9rem;
+  font-family: var(--ck-font-mono);
+  font-size: 0.78rem;
+  margin: 0 0 1.1rem;
+}
+
+.drawer-meta dt {
+  color: var(--ck-text-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  align-self: center;
+}
+
+.drawer-meta dd {
+  margin: 0;
+}
+
+.drawer-status {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.drawer-recap {
+  background: var(--ck-panel-raised);
+  border: 1px solid var(--ck-border-soft);
+  border-left: 3px solid var(--ck-done);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 1.2rem;
+}
+
+.drawer-recap p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ck-text);
+}
+
+.drawer-recap h3,
+.drawer-timeline h3 {
+  font-family: var(--ck-font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ck-text-muted);
+  margin: 0 0 0.6rem;
+}
+
+/* Timeline spine: a vertical rail (::before on the list, dots on each
+   entry) threading events together, echoing the board's process-tree
+   connector but for a linear event log rather than a parent/child tree. */
+.drawer-timeline {
+  position: relative;
+}
+
+.timeline-entry {
+  position: relative;
+  padding: 0.55rem 0 0.55rem 1.15rem;
+}
+
+.timeline-entry:not(:last-child) {
+  border-left: 1px solid var(--ck-border);
+  margin-left: 0.1rem;
+}
+
+.timeline-entry:last-child {
+  border-left: 1px solid transparent;
+  margin-left: 0.1rem;
+}
+
+.timeline-entry::before {
+  content: "";
+  position: absolute;
+  left: -0.19rem;
+  top: 0.75rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ck-text-faint);
+  box-shadow: 0 0 0 2px var(--ck-panel);
+}
+
+.timeline-entry:first-child::before {
+  background: var(--ck-running);
+}
+
+.timeline-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+}
+
+.timeline-ts {
+  font-family: var(--ck-font-mono);
+  color: var(--ck-text-faint);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.timeline-summary {
+  flex: 1;
+  color: var(--ck-text);
+}
+
+.timeline-toggle {
+  flex: none;
+  background: none;
+  border: 1px solid var(--ck-border-soft);
+  color: var(--ck-text-muted);
+  font-family: var(--ck-font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.timeline-toggle:hover {
+  color: var(--ck-text);
+  border-color: var(--ck-text-faint);
+}
+
+.timeline-raw {
+  font-family: var(--ck-font-mono);
+  font-size: 0.71rem;
+  line-height: 1.5;
+  color: var(--ck-text-muted);
+  background: var(--ck-bg);
+  border: 1px solid var(--ck-border-soft);
+  border-radius: 3px;
+  padding: 0.55rem 0.65rem;
+  overflow-x: auto;
+  margin: 0.5rem 0 0;
+}
+
+.drawer-close:focus-visible,
+.timeline-toggle:focus-visible {
+  outline: 2px solid var(--ck-running);
+  outline-offset: 2px;
+}

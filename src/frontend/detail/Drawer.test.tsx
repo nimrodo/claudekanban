@@ -1,0 +1,104 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { Drawer } from "./Drawer.js";
+import type { SessionDetailResponse } from "../lib/transport/Transport.js";
+
+function detail(overrides: Partial<SessionDetailResponse["session"]> = {}): SessionDetailResponse {
+  return {
+    session: {
+      id: "sess-1",
+      parentSessionId: null,
+      owner: "main",
+      title: "Find TODO occurrences",
+      status: "running",
+      startedAt: "2026-08-08T10:00:00.000Z",
+      endedAt: null,
+      cwd: "/tmp/project",
+      model: "claude-sonnet-5",
+      recap: null,
+      ...overrides,
+    },
+    events: [
+      { id: 1, sessionId: "sess-1", ts: "2026-08-08T10:00:00.000Z", type: "SessionStart", payload: "{}" },
+      {
+        id: 2,
+        sessionId: "sess-1",
+        ts: "2026-08-08T10:00:05.000Z",
+        type: "PostToolUse",
+        payload: JSON.stringify({ tool_name: "Bash" }),
+      },
+    ],
+  };
+}
+
+describe("Drawer", () => {
+  it("shows a loading placeholder when loading and no detail yet", () => {
+    render(<Drawer open detail={null} loading onClose={() => {}} />);
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it("renders session metadata", () => {
+    render(<Drawer open detail={detail()} loading={false} onClose={() => {}} />);
+    expect(screen.getByText("Find TODO occurrences")).toBeInTheDocument();
+    expect(screen.getByText("/tmp/project")).toBeInTheDocument();
+    expect(screen.getByText("running")).toBeInTheDocument();
+  });
+
+  it("renders timeline entries newest-first with human-readable summaries", () => {
+    render(<Drawer open detail={detail()} loading={false} onClose={() => {}} />);
+    const summaries = screen.getAllByText(/Session started|Called Bash/);
+    expect(summaries.map((el) => el.textContent)).toEqual(["Called Bash", "Session started"]);
+  });
+
+  it("reveals raw JSON for a timeline entry when its toggle is clicked", () => {
+    render(<Drawer open detail={detail()} loading={false} onClose={() => {}} />);
+    expect(screen.queryByText(/"tool_name"/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByText("Show raw")[0]);
+    expect(screen.getByText(/"tool_name"/)).toBeInTheDocument();
+  });
+
+  it("shows the recap when status is done and recap is set", () => {
+    render(
+      <Drawer
+        open
+        detail={detail({ status: "done", recap: "Found 2 files with TODOs." })}
+        loading={false}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText("Found 2 files with TODOs.")).toBeInTheDocument();
+  });
+
+  it("does not show a recap section when status is not done", () => {
+    render(<Drawer open detail={detail({ status: "running", recap: null })} loading={false} onClose={() => {}} />);
+    expect(screen.queryByText("Recap")).not.toBeInTheDocument();
+  });
+
+  it("calls onClose when the close button is clicked", () => {
+    const onClose = vi.fn();
+    render(<Drawer open detail={detail()} loading={false} onClose={onClose} />);
+    fireEvent.click(screen.getByLabelText("Close"));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("calls onClose when the overlay is clicked", () => {
+    const onClose = vi.fn();
+    const { container } = render(<Drawer open detail={detail()} loading={false} onClose={onClose} />);
+    fireEvent.click(container.querySelector(".drawer-overlay")!);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("calls onClose when Escape is pressed while open", () => {
+    const onClose = vi.fn();
+    render(<Drawer open detail={detail()} loading={false} onClose={onClose} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not respond to Escape when closed", () => {
+    const onClose = vi.fn();
+    render(<Drawer open={false} detail={detail()} loading={false} onClose={onClose} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});
