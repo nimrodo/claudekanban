@@ -274,6 +274,20 @@
   margin: 0.5rem 0 0;
 }
 
+.drawer-error {
+  color: var(--ck-text-muted);
+  font-family: var(--ck-font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding-top: 1rem;
+}
+
+.drawer-error p:first-child {
+  color: var(--ck-text);
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+
 .drawer-close:focus-visible,
 .timeline-toggle:focus-visible {
   outline: 2px solid var(--ck-running);

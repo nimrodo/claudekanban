@@ -11,12 +11,18 @@ const transport = new HttpSseTransport();
 function App() {
   const { sessions } = useLiveState(transport);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { detail, loading } = useSessionDetail(transport, selectedId);
+  const { detail, loading, error } = useSessionDetail(transport, selectedId);
 
   return (
     <>
       <Board sessions={sessions} onSelect={setSelectedId} />
-      <Drawer open={selectedId !== null} detail={detail} loading={loading} onClose={() => setSelectedId(null)} />
+      <Drawer
+        open={selectedId !== null}
+        detail={detail}
+        loading={loading}
+        error={error}
+        onClose={() => setSelectedId(null)}
+      />
     </>
   );
 }
