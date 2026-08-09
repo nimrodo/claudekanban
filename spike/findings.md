@@ -186,3 +186,62 @@ fully resolved.
   sessions/subagents in parallel"). Since CLI hooks already deliver `SessionStart`/
   `PostToolUse`/`Stop` reliably and the subagent-nesting limitation is equally present in both
   paths, there is no offsetting benefit large enough to justify losing passive-observer scope.
+
+## Subagent running-state signal (found during Phase 2 live testing follow-up)
+
+The official hooks docs (`https://code.claude.com/docs/en/hooks`, fetched 2026-08-09) document
+`SubagentStart`/`SubagentStop` hook events, which the original Phase 0 spike never tested for
+(no `SubagentStop` — and `SubagentStart` isn't even mentioned above — ever appeared in either
+capture, because neither was wired into `~/.claude/settings.json` at the time). Re-verified live
+in this installed Claude Code version rather than trusting the docs alone, per this project's
+standing rule (see the `permission_prompt` caveat above).
+
+- **Do `SubagentStart`/`SubagentStop` actually fire? Yes, confirmed live**, with matcher `"*"`
+  wired for both. Capture: `spike/captures/subagent-lifecycle.jsonl`.
+
+- **`SubagentStart` payload** (record 2 in the capture): `session_id` (the **parent's** own
+  `session_id`, not a distinct id — same nesting pattern as everything else subagent-related in
+  this project), `transcript_path`, `cwd` (the parent's cwd), `prompt_id`, `agent_id`,
+  `agent_type` (e.g. `"Explore"`), `hook_event_name`. **No title/description field** — same gap
+  as before; `title` still has to come from the parent's own `PostToolUse.tool_input.description`
+  (Phase 2's existing design), merged in by matching id once that event arrives.
+
+- **`SubagentStop` payload for a genuine subagent** (record 4): same fields as `SubagentStart`
+  plus `permission_mode`, `effort`, `stop_hook_active`, `agent_transcript_path`,
+  `last_assistant_message` (the subagent's own final report text), `background_tasks`,
+  `session_crons`.
+
+- **Correlation: confirmed reliable.** `SubagentStart.agent_id` (`a6c9862bb7993e785`) matches
+  the corresponding `SubagentStop.agent_id` for the same subagent, and both match
+  `tool_response.agentId` on the parent's eventual `PostToolUse` for that `Task` call — verified
+  by cross-checking against claudekanban's own running backend during this same test, which
+  independently synthesized a child `Session` row with `id: "a6c9862bb7993e785"` from
+  `PostToolUse` at the same time. All three signals share one id scheme; `agent_id` is a safe
+  primary key across `SubagentStart`/`SubagentStop`/`PostToolUse`.
+
+- **Timing: confirmed meaningful.** `SubagentStart` fired at `13:41:29.758Z`; the matching
+  `SubagentStop` fired at `13:41:46.993Z` — roughly 17 seconds of real work in between. A
+  `running` status driven by `SubagentStart` would be a real, observable state, not
+  as-immediate as the current `PostToolUse`-only synthesis.
+
+- **Gotcha found, not documented anywhere: `SubagentStop` also fires with `agent_type: ""`
+  (empty) for events that are not a real Task-tool subagent at all** — they appear to be a
+  session's own turn-end signal when *that session itself* is running as a background job
+  nested under an outer Claude Code process (this project's own dev session, running as a
+  background job per its own system prompt, produced exactly this shape: `agent_id` present,
+  `agent_type: ""`, `last_assistant_message` matching the session's own reply, not a subagent's).
+  **Any ingest built on `SubagentStart`/`SubagentStop` must filter on `agent_type` being
+  non-empty (or match `agent_id` against a previously-seen `SubagentStart`) before treating the
+  event as a real child-subagent lifecycle signal** — otherwise a background-job session's own
+  ordinary turn-ends get misread as phantom subagent events.
+
+- **Verdict:** usable. `SubagentStart` → create the child `Session` row immediately with
+  `status: "running"`, `owner: agent_type`, `id: agent_id`, `parentSessionId` = the event's own
+  `session_id`. `SubagentStop` → update that same row to `done`/`failed` (need to determine the
+  failure signal — not directly present as a boolean in this payload; worth checking whether
+  `tool_response.error` on the parent's `PostToolUse`, already used today, remains the source of
+  truth for failure, since `SubagentStop` itself carries no obvious success/failure field).
+  `title` continues to arrive later via the parent's `PostToolUse.tool_input.description`,
+  merged into the existing row by `agent_id` instead of creating a new row (current behavior).
+  This resolves the "known UX gap" flagged in the Phase 1 plan's subagent-synthesis decision —
+  subagent cards can now show a real `queued`/`running` frame instead of popping in already done.
