@@ -39,7 +39,7 @@ export interface SubagentStartPayload {
 
 export function synthesizeSubagentStart(existing: Session | undefined, payload: SubagentStartPayload, receivedAt: string): Session | null {
   if (!payload.agent_id || !payload.agent_type) return null;
-  if (existing && (existing.status === "done" || existing.status === "failed")) return existing;
+  if (existing) return existing;
   return {
     id: payload.agent_id,
     parentSessionId: payload.session_id,

@@ -150,6 +150,23 @@ describe("synthesizeSubagentStart", () => {
     const result = synthesizeSubagentStart(failedChild, startPayload(), "2026-08-09T10:00:20.000Z");
     expect(result).toEqual(failedChild);
   });
+
+  it("does not clobber an existing running row (duplicate SubagentStart delivery)", () => {
+    const runningChild: Session = {
+      id: "agent-123",
+      parentSessionId: "parent-1",
+      owner: "Explore",
+      title: "Find TODO occurrences",
+      status: "running",
+      startedAt: "2026-08-09T10:00:00.000Z",
+      endedAt: null,
+      cwd: "/tmp/project",
+      model: null,
+      recap: null,
+    };
+    const result = synthesizeSubagentStart(runningChild, startPayload(), "2026-08-09T10:00:05.000Z");
+    expect(result).toEqual(runningChild);
+  });
 });
 
 describe("synthesizeSubagentStop", () => {
