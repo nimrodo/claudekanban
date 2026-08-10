@@ -36,3 +36,13 @@ Ingest wiring for all of this lives in `src/ingest/ingest.ts`; the domain logic 
 ## Design docs
 
 Feature work follows brainstorm → spec → grilling → plan → subagent-driven execution, tracked under `docs/superpowers/`. `docs/superpowers/specs/2026-08-07-operations-console-design.md` is the living domain model / state machine spec — update it when a synthesis rule changes, not just the code.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout — `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
