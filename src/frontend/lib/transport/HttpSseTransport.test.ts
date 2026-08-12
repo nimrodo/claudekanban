@@ -9,9 +9,14 @@ describe("HttpSseTransport", () => {
     );
     vi.stubGlobal(
       "EventSource",
-      vi.fn().mockImplementation(function (this: { close: () => void; onmessage: ((e: { data: string }) => void) | null }) {
+      vi.fn().mockImplementation(function (this: {
+        close: () => void;
+        onmessage: ((e: { data: string; lastEventId?: string }) => void) | null;
+        onopen: (() => void) | null;
+      }) {
         this.close = vi.fn();
         this.onmessage = null;
+        this.onopen = null;
       })
     );
   });
@@ -38,6 +43,47 @@ describe("HttpSseTransport", () => {
       .mock.instances[0];
     instance.onmessage({ data: JSON.stringify({ type: "session-changed", entityId: "sess-1" }) });
     expect(received).toEqual([{ type: "session-changed", entityId: "sess-1" }]);
+  });
+
+  it("does not resync on the first open (initial connect)", async () => {
+    const transport = new HttpSseTransport();
+    const received: unknown[] = [];
+    transport.subscribe((event) => received.push(event));
+    const instance = (
+      EventSource as unknown as { mock: { instances: Array<{ onopen: (() => void) | null }> } }
+    ).mock.instances[0];
+    instance.onopen?.();
+    await Promise.resolve();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(received).toEqual([]);
+  });
+
+  it("resyncs via GET /api/state?since= on a reconnect (second open)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => ({ sessions: [{ id: "sess-1" }, { id: "sess-2" }] }) }))
+    );
+    const transport = new HttpSseTransport();
+    const received: unknown[] = [];
+    transport.subscribe((event) => received.push(event));
+    const instance = (
+      EventSource as unknown as {
+        mock: {
+          instances: Array<{
+            onopen: (() => void) | null;
+            onmessage: ((e: { data: string; lastEventId?: string }) => void) | null;
+          }>;
+        };
+      }
+    ).mock.instances[0];
+
+    instance.onopen?.(); // first open: initial connect, no resync
+    instance.onmessage?.({ data: JSON.stringify({ type: "session-changed", entityId: "sess-1" }), lastEventId: "7" });
+    instance.onopen?.(); // second open: reconnect, triggers resync
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/state?since=7"));
+    await vi.waitFor(() =>
+      expect(received).toContainEqual({ type: "resync", sessions: [{ id: "sess-1" }, { id: "sess-2" }] })
+    );
   });
 
   it("subscribe's returned unsubscribe function closes the EventSource", () => {

@@ -21,13 +21,14 @@ export interface SessionDetailResponse {
   events: EventDto[];
 }
 
-export interface StreamEvent {
-  type: string;
-  entityId: string;
-}
+export type StreamEvent =
+  | { type: "session-changed"; entityId: string; patch?: SessionDto }
+  // Synthetic event, fired by a transport after reconnecting, carrying a full state
+  // snapshot to fill any gap missed while disconnected. Not about one entity, so no entityId.
+  | { type: "resync"; sessions: SessionDto[] };
 
 export interface Transport {
-  getState(): Promise<StateResponse>;
+  getState(since?: number): Promise<StateResponse>;
   getSessionDetail(id: string): Promise<SessionDetailResponse>;
   subscribe(onEvent: (event: StreamEvent) => void): () => void;
 }
