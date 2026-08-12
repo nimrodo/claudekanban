@@ -86,6 +86,18 @@ describe("useSessionDetail", () => {
     await waitFor(() => expect(result.current.detail?.session.id).toBe("sess-1"));
   });
 
+  it("refetches on a resync event, regardless of sessionId", async () => {
+    const helper = fakeTransport();
+    const { result } = renderHook(() => useSessionDetail(helper.transport, "sess-1"));
+    helper.resolveNext(makeDetail("sess-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    helper.emit({ type: "resync", sessions: [] });
+    await waitFor(() => expect(helper.getDetailCallCount()).toBe(2));
+    helper.resolveNext(makeDetail("sess-1"));
+    await waitFor(() => expect(result.current.detail?.session.id).toBe("sess-1"));
+  });
+
   it("ignores a session-changed event for a different sessionId", async () => {
     const helper = fakeTransport();
     renderHook(() => useSessionDetail(helper.transport, "sess-1"));

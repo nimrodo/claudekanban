@@ -1,60 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import type { SessionDetailResponse, StreamEvent, Transport } from "./transport/Transport.js";
+import { useGuardedAsync } from "./useGuardedAsync.js";
 
 export function useSessionDetail(
   transport: Transport,
   sessionId: string | null
 ): { detail: SessionDetailResponse | null; loading: boolean; error: string | null } {
-  const [detail, setDetail] = useState<SessionDetailResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const latestRequestId = useRef(0);
+  const { data, loading, error, refetch } = useGuardedAsync<SessionDetailResponse>(
+    () => transport.getSessionDetail(sessionId as string),
+    [transport, sessionId],
+    { enabled: sessionId !== null }
+  );
 
   useEffect(() => {
-    if (!sessionId) {
-      setDetail(null);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setDetail(null);
-    setLoading(true);
-    setError(null);
-
-    function fetchDetail() {
-      latestRequestId.current += 1;
-      const requestId = latestRequestId.current;
-      transport
-        .getSessionDetail(sessionId as string)
-        .then((result) => {
-          if (!cancelled && requestId === latestRequestId.current) {
-            setDetail(result);
-            setLoading(false);
-          }
-        })
-        .catch((err) => {
-          if (!cancelled && requestId === latestRequestId.current) {
-            setError(err instanceof Error ? err.message : "Failed to load session detail");
-            setLoading(false);
-          }
-        });
-    }
-
-    fetchDetail();
-
-    const unsubscribe = transport.subscribe((event: StreamEvent) => {
-      if (event.entityId === sessionId) {
-        fetchDetail();
+    if (!sessionId) return;
+    return transport.subscribe((event: StreamEvent) => {
+      if (event.type === "session-changed" && event.entityId === sessionId) {
+        refetch();
+      } else if (event.type === "resync") {
+        refetch();
       }
     });
+  }, [transport, sessionId, refetch]);
 
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [transport, sessionId]);
-
-  return { detail, loading, error };
+  return { detail: data, loading, error };
 }

@@ -1,33 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SessionDto, Transport } from "./transport/Transport.js";
+import { useGuardedAsync } from "./useGuardedAsync.js";
+import { applySessionEvent } from "./applySessionEvent.js";
 
 export function useLiveState(transport: Transport): { sessions: SessionDto[] } {
+  const { data } = useGuardedAsync(() => transport.getState(), [transport]);
   const [sessions, setSessions] = useState<SessionDto[]>([]);
-  const latestRequestId = useRef(0);
 
   useEffect(() => {
-    let cancelled = false;
+    if (data) setSessions(data.sessions);
+  }, [data]);
 
-    function fetchState() {
-      latestRequestId.current += 1;
-      const requestId = latestRequestId.current;
-      transport.getState().then((state) => {
-        if (!cancelled && requestId === latestRequestId.current) {
-          setSessions(state.sessions);
-        }
-      });
-    }
-
-    fetchState();
-
-    const unsubscribe = transport.subscribe(() => {
-      fetchState();
+  useEffect(() => {
+    return transport.subscribe((event) => {
+      setSessions((prev) => applySessionEvent(prev, event));
     });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
   }, [transport]);
 
   return { sessions };
