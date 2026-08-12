@@ -68,8 +68,8 @@ describe("Board", () => {
     expect(childCard?.getAttribute("data-status")).toBe("running");
   });
 
-  it("renders a failed subagent as its own top-level card in the failed column", () => {
-    render(
+  it("renders a failed subagent nested under its parent, marked as failed, not as a top-level card", () => {
+    const { container } = render(
       <Board
         sessions={[
           session({ id: "parent-1", owner: "main", status: "running" }),
@@ -80,8 +80,12 @@ describe("Board", () => {
     );
 
     const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
-    expect(failedColumn).not.toBeNull();
-    expect(failedColumn && failedColumn.querySelector(".card-owner")?.textContent).toBe("Explore");
+    expect(failedColumn?.querySelector(".card")).toBeNull();
+
+    const childCard = container.querySelector(".child-card");
+    expect(childCard?.getAttribute("data-status")).toBe("failed");
+    expect(childCard?.textContent).toContain("Explore");
+    expect(childCard?.textContent).toContain("failed");
   });
 
   it("calls onSelect with a top-level session's id when its card is clicked", () => {
