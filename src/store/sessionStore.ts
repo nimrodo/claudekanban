@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import type { SessionShape, SessionStatus } from "../domain/types.js";
+import type { StaleCandidate } from "../domain/staleSweep.js";
 
 export type { SessionStatus };
 
@@ -53,4 +54,15 @@ export function getSession(db: Database.Database, id: string): Session | undefin
 export function listSessions(db: Database.Database): Session[] {
   const rows = db.prepare(`SELECT * FROM session ORDER BY started_at ASC`).all() as SessionRow[];
   return rows.map(rowToSession);
+}
+
+export function touchSessionActivity(db: Database.Database, id: string, ts: string): void {
+  db.prepare(`UPDATE session SET last_activity_at = ? WHERE id = ?`).run(ts, id);
+}
+
+export function listRunningSessionActivity(db: Database.Database): StaleCandidate[] {
+  const rows = db
+    .prepare(`SELECT id, status, last_activity_at FROM session WHERE status = 'running'`)
+    .all() as Array<{ id: string; status: SessionStatus; last_activity_at: string | null }>;
+  return rows.map((row) => ({ id: row.id, status: row.status, lastActivityAt: row.last_activity_at }));
 }
