@@ -59,6 +59,27 @@ describe("api routes", () => {
     expect((body as { sessions: unknown[] }).sessions).toHaveLength(1);
   });
 
+  it("GET /api/state?since= is accepted and still returns the full snapshot", async () => {
+    const db = testDb();
+    upsertSession(db, {
+      id: "sess-1",
+      parentSessionId: null,
+      owner: "main",
+      title: null,
+      status: "running",
+      startedAt: "2026-08-08T10:00:00.000Z",
+      endedAt: null,
+      cwd: "/tmp",
+      model: null,
+      recap: null,
+    });
+    const { baseUrl, close } = await startTestServer(db);
+    const { status, body } = await getJson(`${baseUrl}/api/state?since=3`);
+    close();
+    expect(status).toBe(200);
+    expect((body as { sessions: unknown[] }).sessions).toHaveLength(1);
+  });
+
   it("GET /api/sessions/:id returns session + events", async () => {
     const db = testDb();
     upsertSession(db, {

@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import type { SessionShape } from "../domain/types.js";
 import { changeEmitter } from "../domain/changeEmitter.js";
 
 const clients = new Set<Response>();
@@ -15,9 +16,10 @@ export function handleSseConnection(res: Response): void {
   });
 }
 
-changeEmitter.on("session-changed", (sessionId: string) => {
-  const payload = JSON.stringify({ type: "session-changed", entityId: sessionId });
+changeEmitter.on("session-changed", (session: SessionShape, eventId?: number) => {
+  const payload = JSON.stringify({ type: "session-changed", entityId: session.id, patch: session });
+  const idLine = eventId !== undefined ? `id: ${eventId}\n` : "";
   for (const res of clients) {
-    res.write(`data: ${payload}\n\n`);
+    res.write(`${idLine}data: ${payload}\n\n`);
   }
 });

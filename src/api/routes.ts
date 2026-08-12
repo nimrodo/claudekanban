@@ -6,7 +6,12 @@ import { listEventsForSession } from "../store/eventStore.js";
 export function createApiRouter(db: Database.Database): Router {
   const router = Router();
 
-  router.get("/state", (_req, res) => {
+  router.get("/state", (req, res) => {
+    // Accepted but currently unused: v1 always returns the full snapshot, which trivially
+    // "fills the gap" on reconnect at this app's scale. A true since-cursor delta isn't
+    // worth the complexity yet (see docs/superpowers/specs/2026-08-07-operations-console-design.md,
+    // "Real-time update design").
+    void (req.query.since ? Number(req.query.since) : undefined);
     res.json({ sessions: listSessions(db) });
   });
 
