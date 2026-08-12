@@ -16,6 +16,7 @@ claudekanban is a real-time kanban-style console for observing Claude Code sessi
 - Single test file: `npx vitest run src/domain/subagentSynthesis.test.ts`
 - Single test by name: `npx vitest run -t "test name substring"`
 - Hook smoke test: `bash hooks/hooks.test.sh` — spins up a mock server on port 4317 and verifies every script in `hooks/` forwards stdin correctly. If it fails with "did not forward payload", check `lsof -i :4317` for a stray `dev:server` process already bound to that port.
+- `npm run hooks:install` — merges the 7 claudekanban hook entries (`SessionStart`, `PostToolUse`, `Stop`, `SubagentStart`, `SubagentStop`, `Notification`, `PermissionRequest`) into a Claude Code `settings.json`, without touching any other hooks already registered there. Flags: `--user` / `--project` / `--path <file>` to pick the target non-interactively, `--dry-run` to preview, `--remove` to uninstall, `--yes` to skip the confirm prompt (required if stdin isn't a TTY). Logic lives in `scripts/install-hooks-lib.ts` (pure, unit-tested — `scripts/install-hooks-lib.test.ts`) with a thin CLI wrapper in `scripts/install-hooks.ts`; typechecked separately via `npx tsc -p tsconfig.scripts.json` since it's outside `src/`'s `rootDir`.
 
 ## Architecture
 
