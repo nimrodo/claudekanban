@@ -10,7 +10,15 @@ export interface HookPayload {
   tool_response?: { agentId?: string; error?: unknown; [key: string]: unknown };
   last_assistant_message?: string;
   notification_type?: string;
+  // Unconfirmed: no capture in spike/findings.md's "Stop payload / recap" section has ever
+  // shown an error/failure field on a Stop event. Named ahead of a live capture so only this
+  // field needs updating once one is confirmed; until then stopFailed() is always false.
+  is_error?: boolean;
   [key: string]: unknown;
+}
+
+function stopFailed(payload: HookPayload): boolean {
+  return Boolean(payload.is_error);
 }
 
 export function deriveStatus(currentStatus: SessionStatus | undefined, payload: HookPayload): SessionStatus {
@@ -24,7 +32,7 @@ export function deriveStatus(currentStatus: SessionStatus | undefined, payload: 
     case "PostToolUse":
       return "running";
     case "Stop":
-      return "done";
+      return stopFailed(payload) ? "failed" : "done";
     default:
       return currentStatus ?? "running";
   }

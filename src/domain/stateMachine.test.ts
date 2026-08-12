@@ -34,8 +34,12 @@ describe("deriveStatus", () => {
     expect(deriveStatus("running", payload({ hook_event_name: "PostToolUse" }))).toBe("running");
   });
 
-  it("Stop yields done", () => {
+  it("Stop without an error signal yields done", () => {
     expect(deriveStatus("running", payload({ hook_event_name: "Stop" }))).toBe("done");
+  });
+
+  it("Stop with is_error true yields failed", () => {
+    expect(deriveStatus("running", payload({ hook_event_name: "Stop", is_error: true }))).toBe("failed");
   });
 
   it("unknown event preserves current status, defaulting to running if unset", () => {
