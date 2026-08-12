@@ -9,5 +9,15 @@ export function createDb(dbPath: string): Database.Database {
   const db = new Database(dbPath);
   const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf-8");
   db.exec(schema);
+  migrateSessionColumns(db);
   return db;
+}
+
+// CREATE TABLE IF NOT EXISTS doesn't retrofit new columns onto an existing on-disk DB —
+// there's no migration runner in this project, so guard each new column here.
+function migrateSessionColumns(db: Database.Database): void {
+  const columns = db.prepare("PRAGMA table_info(session)").all() as Array<{ name: string }>;
+  if (!columns.some((c) => c.name === "last_activity_at")) {
+    db.exec("ALTER TABLE session ADD COLUMN last_activity_at TEXT");
+  }
 }
