@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import type Database from "better-sqlite3";
 import { insertEvent } from "../store/eventStore.js";
-import { upsertSession, getSession } from "../store/sessionStore.js";
+import { getSession, type Session } from "../store/sessionStore.js";
+import { applySessionChange } from "../store/applyChange.js";
 import { deriveStatus, type HookPayload } from "../domain/stateMachine.js";
 import {
   synthesizeSubagentSession,
@@ -12,7 +13,6 @@ import {
   type SubagentStartPayload,
   type SubagentStopPayload,
 } from "../domain/subagentSynthesis.js";
-import { changeEmitter } from "../domain/changeEmitter.js";
 
 export function createIngestHandler(db: Database.Database) {
   return function handleIngest(req: Request, res: Response): void {
@@ -23,11 +23,11 @@ export function createIngestHandler(db: Database.Database) {
     }
 
     const receivedAt = new Date().toISOString();
-    insertEvent(db, payload.session_id, receivedAt, payload.hook_event_name, payload);
+    const eventRecord = insertEvent(db, payload.session_id, receivedAt, payload.hook_event_name, payload);
 
     const existing = getSession(db, payload.session_id);
     const status = deriveStatus(existing?.status, payload);
-    upsertSession(db, {
+    const updatedSession: Session = {
       id: payload.session_id,
       parentSessionId: existing?.parentSessionId ?? null,
       owner: existing?.owner ?? "main",
@@ -38,16 +38,15 @@ export function createIngestHandler(db: Database.Database) {
       cwd: payload.cwd ?? existing?.cwd ?? "",
       model: payload.model ?? existing?.model ?? null,
       recap: payload.hook_event_name === "Stop" ? payload.last_assistant_message ?? null : existing?.recap ?? null,
-    });
-    changeEmitter.emit("session-changed", payload.session_id);
+    };
+    applySessionChange(db, updatedSession, receivedAt, eventRecord.id);
 
     if (payload.hook_event_name === "SubagentStart") {
       const startPayload = payload as SubagentStartPayload;
       const existingChild = startPayload.agent_id ? getSession(db, startPayload.agent_id) : undefined;
       const child = synthesizeSubagentStart(existingChild, startPayload, receivedAt);
       if (child) {
-        upsertSession(db, child);
-        changeEmitter.emit("session-changed", child.id);
+        applySessionChange(db, child, receivedAt, eventRecord.id);
       }
     }
 
@@ -58,8 +57,7 @@ export function createIngestHandler(db: Database.Database) {
         if (existingChild) {
           const updated = synthesizeSubagentStop(existingChild, stopPayload, receivedAt);
           if (updated) {
-            upsertSession(db, updated);
-            changeEmitter.emit("session-changed", updated.id);
+            applySessionChange(db, updated, receivedAt, eventRecord.id);
           }
         }
       }
@@ -71,13 +69,11 @@ export function createIngestHandler(db: Database.Database) {
         const existingChild = getSession(db, agentId);
         if (existingChild) {
           const merged = mergeSubagentTitle(existingChild, payload as PostToolUsePayload, receivedAt);
-          upsertSession(db, merged);
-          changeEmitter.emit("session-changed", merged.id);
+          applySessionChange(db, merged, receivedAt, eventRecord.id);
         } else {
           const child = synthesizeSubagentSession(payload as PostToolUsePayload, receivedAt);
           if (child) {
-            upsertSession(db, child);
-            changeEmitter.emit("session-changed", child.id);
+            applySessionChange(db, child, receivedAt, eventRecord.id);
           }
         }
       }

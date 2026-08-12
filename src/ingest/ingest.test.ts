@@ -76,7 +76,7 @@ describe("createIngestHandler", () => {
     handler({ body: { hook_event_name: "SessionStart", session_id: "parent-1", cwd: "/tmp" } } as Request, fakeRes());
 
     const seen: string[] = [];
-    const listener = (id: string) => seen.push(id);
+    const listener = (session: { id: string }) => seen.push(session.id);
     changeEmitter.on("session-changed", listener);
     handler(
       {
@@ -347,7 +347,7 @@ describe("createIngestHandler", () => {
     const db = testDb();
     const handler = createIngestHandler(db);
     const seen: string[] = [];
-    const listener = (id: string) => seen.push(id);
+    const listener = (session: { id: string }) => seen.push(session.id);
     changeEmitter.on("session-changed", listener);
     handler({ body: { hook_event_name: "SessionStart", session_id: "sess-1", cwd: "/tmp" } } as Request, fakeRes());
     changeEmitter.off("session-changed", listener);
