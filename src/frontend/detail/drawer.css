@@ -32,7 +32,7 @@
   background: var(--ck-panel);
   border-left: 1px solid var(--ck-border);
   box-shadow: -24px 0 48px -24px rgba(0, 0, 0, 0.5);
-  padding: 1.1rem 1.25rem 2rem;
+  padding: var(--ck-space-6) 1.25rem 2rem;
   overflow-y: auto;
   transform: translateX(100%);
   transition: transform 0.22s cubic-bezier(0.32, 0.72, 0.35, 1);
@@ -92,7 +92,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.9rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: var(--ck-space-6);
   border-bottom: 1px solid var(--ck-border);
 }
 
@@ -118,7 +118,7 @@
   place-items: center;
   background: none;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: var(--ck-radius-sm);
   color: var(--ck-text-muted);
   font-size: 1.2rem;
   line-height: 1;
@@ -134,10 +134,10 @@
 .drawer-meta {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.45rem 0.9rem;
+  gap: var(--ck-space-3) 0.9rem;
   font-family: var(--ck-font-mono);
   font-size: 0.78rem;
-  margin: 0 0 1.1rem;
+  margin: 0 0 var(--ck-space-6);
 }
 
 .drawer-meta dt {
@@ -162,8 +162,8 @@
   background: var(--ck-panel-raised);
   border: 1px solid var(--ck-border-soft);
   border-left: 3px solid var(--ck-done);
-  border-radius: 4px;
-  padding: 0.7rem 0.85rem;
+  border-radius: var(--ck-radius-md);
+  padding: 0.7rem var(--ck-space-5);
   margin-bottom: 1.2rem;
 }
 
@@ -232,7 +232,7 @@
 
 .timeline-ts {
   font-family: var(--ck-font-mono);
-  color: var(--ck-text-faint);
+  color: var(--ck-text-muted);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -250,7 +250,7 @@
   font-family: var(--ck-font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.02em;
-  border-radius: 3px;
+  border-radius: var(--ck-radius-sm);
   padding: 0.15rem 0.45rem;
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease;
@@ -268,7 +268,7 @@
   color: var(--ck-text-muted);
   background: var(--ck-bg);
   border: 1px solid var(--ck-border-soft);
-  border-radius: 3px;
+  border-radius: var(--ck-radius-sm);
   padding: 0.55rem 0.65rem;
   overflow-x: auto;
   margin: 0.5rem 0 0;

@@ -81,6 +81,15 @@
   --ck-font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --ck-font-sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
 
+  --ck-space-1: 0.15rem;
+  --ck-space-2: 0.3rem;
+  --ck-space-3: 0.45rem;
+  --ck-space-4: 0.6rem;
+  --ck-space-5: 0.85rem;
+  --ck-space-6: 1.1rem;
+  --ck-radius-sm: 3px;
+  --ck-radius-md: 4px;
+
   color-scheme: dark;
 }
 
@@ -195,21 +204,28 @@ body {
 }
 
 .card {
-  margin: 0.6rem 0.85rem;
-  padding: 0.75rem 0.85rem 0.7rem;
+  margin: var(--ck-space-4) var(--ck-space-5);
+  padding: var(--ck-space-5) var(--ck-space-5) 0.7rem;
   background: var(--ck-panel);
   border: 1px solid var(--ck-border);
   border-left: 3px solid var(--ck-text-faint);
-  border-radius: 4px;
+  border-radius: var(--ck-radius-md);
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: var(--ck-space-2);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  background: var(--ck-panel-raised);
+  border-color: var(--ck-text-faint);
 }
 
 .card-cwd {
   font-family: var(--ck-font-sans);
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--ck-text);
   order: 0;
   overflow: hidden;
@@ -228,7 +244,7 @@ body {
 .card-id {
   font-family: var(--ck-font-mono);
   font-size: 0.72rem;
-  color: var(--ck-text-faint);
+  color: var(--ck-text-muted);
   letter-spacing: 0.02em;
   order: 2;
 }
@@ -247,12 +263,12 @@ body {
    into its nested children, echoing `ps --forest` / `git log --graph`. */
 .card-children {
   order: 4;
-  margin-top: 0.4rem;
+  margin-top: var(--ck-space-2);
   padding-top: 0.55rem;
   border-top: 1px dashed var(--ck-border);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--ck-space-2);
   position: relative;
 }
 
@@ -260,12 +276,18 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.4rem 0.6rem 0.4rem 1.35rem;
+  gap: var(--ck-space-1);
+  padding: var(--ck-space-2) var(--ck-space-4) var(--ck-space-2) 1.35rem;
   background: var(--ck-panel-raised);
   border: 1px solid var(--ck-border-soft);
-  border-radius: 3px;
+  border-radius: var(--ck-radius-sm);
   font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.child-card:hover {
+  border-color: var(--ck-text-faint);
 }
 
 .child-title {
@@ -317,7 +339,15 @@ body {
 
 .child-card .card-status {
   font-size: 0.62rem;
+  color: var(--ck-text-muted);
+}
+
+.column-empty {
+  padding: var(--ck-space-4) 1rem;
+  font-family: var(--ck-font-mono);
+  font-size: 0.72rem;
   color: var(--ck-text-faint);
+  text-align: center;
 }
 
 @media (max-width: 900px) {

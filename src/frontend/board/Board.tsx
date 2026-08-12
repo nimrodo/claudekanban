@@ -16,16 +16,20 @@ export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect
       {STATUS_COLUMNS.map((status) => (
         <div key={status} className="column" data-status={status}>
           <h2>{status}</h2>
-          {topLevel
-            .filter((s) => s.status === status)
-            .map((s) => (
+          {(() => {
+            const columnSessions = topLevel.filter((s) => s.status === status);
+            if (columnSessions.length === 0) {
+              return <div className="column-empty">—</div>;
+            }
+            return columnSessions.map((s) => (
               <SessionCard
                 key={s.id}
                 session={s}
                 onSelect={onSelect}
                 children={isPromotedFailedChild(s) ? [] : sessions.filter((c) => c.parentSessionId === s.id && c.status !== "failed")}
               />
-            ))}
+            ));
+          })()}
         </div>
       ))}
     </div>
