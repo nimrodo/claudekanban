@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { Board } from "./Board.js";
 import type { SessionDto } from "../lib/transport/Transport.js";
 
@@ -20,6 +20,22 @@ function session(overrides: Partial<SessionDto>): SessionDto {
 }
 
 describe("Board", () => {
+  it("renders a status strip with a count per status, including subagents", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", status: "running" }),
+          session({ id: "child-1", parentSessionId: "parent-1", status: "failed" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    expect(within(strip).getByRole("button", { name: /running/ })).toHaveTextContent("1");
+    expect(within(strip).getByRole("button", { name: /failed/ })).toHaveTextContent("1");
+    expect(within(strip).getByRole("button", { name: /queued/ })).toHaveTextContent("0");
+  });
+
   it("renders a top-level session under its status column", () => {
     render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
     expect(screen.getByRole("heading", { name: "running" })).toBeInTheDocument();
