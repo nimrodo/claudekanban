@@ -9,12 +9,17 @@ export interface PostToolUsePayload {
   tool_response?: { agentId?: string; error?: unknown; [key: string]: unknown };
 }
 
+function errorToReason(error: unknown): string {
+  return typeof error === "string" ? error : JSON.stringify(error);
+}
+
 export function synthesizeSubagentSession(payload: PostToolUsePayload, receivedAt: string): Session | null {
   if (payload.tool_name !== "Agent" && payload.tool_name !== "Task") return null;
   const agentId = payload.tool_response?.agentId;
   if (!agentId) return null;
 
-  const failed = Boolean(payload.tool_response?.error);
+  const error = payload.tool_response?.error;
+  const failed = Boolean(error);
   return {
     id: agentId,
     parentSessionId: payload.session_id,
@@ -26,7 +31,7 @@ export function synthesizeSubagentSession(payload: PostToolUsePayload, receivedA
     cwd: payload.cwd,
     model: null,
     recap: null,
-    failReason: null,
+    failReason: failed ? errorToReason(error) : null,
   };
 }
 
@@ -74,11 +79,13 @@ export function synthesizeSubagentStop(existing: Session, payload: SubagentStopP
 }
 
 export function mergeSubagentTitle(existing: Session, payload: PostToolUsePayload, receivedAt: string): Session {
-  const failed = Boolean(payload.tool_response?.error);
+  const error = payload.tool_response?.error;
+  const failed = Boolean(error);
   return {
     ...existing,
     title: existing.title ?? (payload.tool_input.description || null),
     status: failed ? "failed" : existing.status,
     endedAt: failed && existing.status !== "failed" ? receivedAt : existing.endedAt,
+    failReason: failed ? errorToReason(error) : existing.failReason,
   };
 }
