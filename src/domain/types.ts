@@ -11,4 +11,5 @@ export interface SessionShape {
   cwd: string;
   model: string | null;
   recap: string | null;
+  failReason: string | null;
 }

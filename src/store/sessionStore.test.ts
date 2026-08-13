@@ -24,6 +24,7 @@ const baseSession: Session = {
   cwd: "/tmp/project",
   model: "claude-sonnet-5",
   recap: null,
+  failReason: null,
 };
 
 describe("sessionStore", () => {
@@ -43,6 +44,13 @@ describe("sessionStore", () => {
       endedAt: "2026-08-08T10:05:00.000Z",
       recap: "All done.",
     });
+  });
+
+  it("round-trips failReason through insert and update", () => {
+    const db = testDb();
+    upsertSession(db, baseSession);
+    upsertSession(db, { ...baseSession, status: "failed", failReason: "No activity for 30 minutes" });
+    expect(getSession(db, "sess-1")?.failReason).toBe("No activity for 30 minutes");
   });
 
   it("updates title on conflict when a later upsert sets a new value", () => {
