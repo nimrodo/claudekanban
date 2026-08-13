@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS session (
   cwd TEXT NOT NULL,
   model TEXT,
   recap TEXT,
-  last_activity_at TEXT
+  last_activity_at TEXT,
+  fail_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS event (
