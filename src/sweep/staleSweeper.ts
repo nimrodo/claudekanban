@@ -9,7 +9,12 @@ export function runStaleSweep(db: Database.Database, nowIso: string, timeoutMinu
   for (const id of staleIds) {
     const existing = getSession(db, id);
     if (!existing) continue;
-    const updated = { ...existing, status: "failed" as const, endedAt: nowIso };
+    const updated = {
+      ...existing,
+      status: "failed" as const,
+      endedAt: nowIso,
+      failReason: `No activity for ${timeoutMinutes} minutes`,
+    };
     applySessionChange(db, updated, nowIso);
   }
 }
