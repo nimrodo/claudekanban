@@ -77,6 +77,37 @@ describe("Board", () => {
     expect(screen.getByText("Explore")).toBeInTheDocument();
   });
 
+  it("shows a plain column-badge count when nothing is filtered", () => {
+    render(
+      <Board
+        sessions={[session({ id: "sess-1", status: "running" }), session({ id: "sess-2", status: "running" })]}
+        onSelect={() => {}}
+      />
+    );
+    const column = screen.getByRole("heading", { name: "running" }).closest(".column");
+    expect(column?.querySelector(".column-count")).toHaveTextContent("2");
+  });
+
+  it("shows a visible/total fraction on the column badge once a filter hides some of its cards", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "sess-running", status: "running" }),
+          session({ id: "sess-running-2", status: "running" }),
+          session({ id: "sess-failed", status: "failed" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    fireEvent.click(within(strip).getByRole("button", { name: /failed/ }));
+
+    const runningColumn = screen.getByRole("heading", { name: "running" }).closest(".column");
+    expect(runningColumn?.querySelector(".column-count")).toHaveTextContent("0/2");
+    const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
+    expect(failedColumn?.querySelector(".column-count")).toHaveTextContent("1");
+  });
+
   it("renders a top-level session under its status column", () => {
     render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
     expect(screen.getByRole("heading", { name: "running" })).toBeInTheDocument();
