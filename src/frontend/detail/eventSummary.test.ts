@@ -104,7 +104,11 @@ describe("buildTimeline", () => {
   });
 
   it("orders entries newest-first by id", () => {
-    const entries = buildTimeline([event({ id: 1 }), event({ id: 3 }), event({ id: 2 })]);
+    const entries = buildTimeline([
+      event({ id: 1, type: "SessionStart" }),
+      event({ id: 3, type: "Stop" }),
+      event({ id: 2, type: "PermissionRequest" }),
+    ]);
     expect(entries.map((e) => e.id)).toEqual([3, 2, 1]);
   });
 

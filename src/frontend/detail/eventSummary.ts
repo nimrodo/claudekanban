@@ -44,8 +44,33 @@ function summarize(type: string, payload: ToolCallPayload): string {
   }
 }
 
+function groupingKey(type: string, payload: ToolCallPayload): string {
+  switch (type) {
+    case "PostToolUse":
+      return `${type}:${payload.tool_name ?? ""}`;
+    case "Notification":
+      return `${type}:${payload.notification_type ?? ""}`;
+    default:
+      return type;
+  }
+}
+
+interface MappedEvent {
+  id: number;
+  ts: string;
+  type: string;
+  summary: string;
+  raw: unknown;
+  key: string;
+}
+
+interface Group {
+  entries: MappedEvent[];
+  key: string;
+}
+
 export function buildTimeline(events: EventDto[]): TimelineEntry[] {
-  return events
+  const mapped: MappedEvent[] = events
     .map((event) => {
       let raw: unknown = {};
       try {
@@ -53,13 +78,38 @@ export function buildTimeline(events: EventDto[]): TimelineEntry[] {
       } catch {
         raw = event.payload;
       }
+      const payload = (raw ?? {}) as ToolCallPayload;
       return {
         id: event.id,
         ts: event.ts,
         type: event.type,
-        summary: summarize(event.type, (raw ?? {}) as ToolCallPayload),
-        raw: [raw],
-        count: 1,
+        summary: summarize(event.type, payload),
+        raw,
+        key: groupingKey(event.type, payload),
+      };
+    })
+    .sort((a, b) => a.id - b.id);
+
+  const groups: Group[] = [];
+  for (const entry of mapped) {
+    const last = groups[groups.length - 1];
+    if (last && last.key === entry.key) {
+      last.entries.push(entry);
+    } else {
+      groups.push({ key: entry.key, entries: [entry] });
+    }
+  }
+
+  return groups
+    .map(({ entries }): TimelineEntry => {
+      const latest = entries[entries.length - 1];
+      return {
+        id: latest.id,
+        ts: latest.ts,
+        type: latest.type,
+        summary: latest.summary,
+        raw: entries.map((e) => e.raw),
+        count: entries.length,
       };
     })
     .sort((a, b) => b.id - a.id);
