@@ -13,6 +13,10 @@ function matchesFilter(session: SessionDto, filter: SessionStatus | null, childr
   return (childrenByParent.get(session.id) ?? []).some((child) => child.status === filter);
 }
 
+function fraction(visible: number, total: number): string {
+  return visible === total ? `${total}` : `${visible}/${total}`;
+}
+
 export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect: (id: string) => void }) {
   const { topLevel, childrenByParent } = groupSessions(sessions);
   const counts = countByStatus(sessions);
@@ -36,22 +40,29 @@ export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect
       <div className="board">
         {STATUS_COLUMNS.map((status) => (
           <div key={status} className="column" data-status={status}>
-            <h2>{status}</h2>
             {(() => {
-              const columnSessions = topLevel
-                .filter((s) => s.status === status)
-                .filter((s) => matchesFilter(s, statusFilter, childrenByParent));
-              if (columnSessions.length === 0) {
-                return <div className="column-empty">—</div>;
-              }
-              return columnSessions.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onSelect={onSelect}
-                  children={childrenByParent.get(s.id) ?? []}
-                />
-              ));
+              const columnTotal = topLevel.filter((s) => s.status === status);
+              const columnSessions = columnTotal.filter((s) => matchesFilter(s, statusFilter, childrenByParent));
+              return (
+                <>
+                  <div className="column-header">
+                    <h2>{status}</h2>
+                    <span className="column-count">{fraction(columnSessions.length, columnTotal.length)}</span>
+                  </div>
+                  {columnSessions.length === 0 ? (
+                    <div className="column-empty">—</div>
+                  ) : (
+                    columnSessions.map((s) => (
+                      <SessionCard
+                        key={s.id}
+                        session={s}
+                        onSelect={onSelect}
+                        children={childrenByParent.get(s.id) ?? []}
+                      />
+                    ))
+                  )}
+                </>
+              );
             })()}
           </div>
         ))}
