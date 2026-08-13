@@ -33,6 +33,9 @@ export function SessionCard({
       <div className="card-owner">{session.owner}</div>
       <div className="card-id">{session.id.slice(0, 8)}</div>
       <div className="card-status">{session.status}</div>
+      {session.status === "failed" && session.failReason && (
+        <div className="card-fail-reason" title={session.failReason}>{session.failReason}</div>
+      )}
       {children.length > 0 && (
         <div className="card-children">
           {children.map((child) => (
@@ -58,6 +61,9 @@ export function SessionCard({
                 <span className="card-owner">{child.owner}</span>
                 <span className="card-status">{child.status}</span>
               </div>
+              {child.status === "failed" && child.failReason && (
+                <div className="card-fail-reason" title={child.failReason}>{child.failReason}</div>
+              )}
             </div>
           ))}
         </div>
