@@ -50,6 +50,7 @@ export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect
             key={status}
             type="button"
             data-status={status}
+            data-empty={counts[status] === 0 ? "true" : undefined}
             aria-pressed={statusFilter === status}
             onClick={() => setStatusFilter((current) => (current === status ? null : status))}
           >
