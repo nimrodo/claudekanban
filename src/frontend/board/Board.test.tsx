@@ -15,6 +15,7 @@ function session(overrides: Partial<SessionDto>): SessionDto {
     cwd: "/tmp",
     model: null,
     recap: null,
+    failReason: null,
     ...overrides,
   };
 }
@@ -134,6 +135,37 @@ describe("Board", () => {
     expect(runningColumn?.querySelector(".column-count")).toHaveTextContent("0/2");
     const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
     expect(failedColumn?.querySelector(".column-count")).toHaveTextContent("1");
+  });
+
+  it("shows a truncated failure reason with a full-text title on a failed top-level card", () => {
+    render(
+      <Board
+        sessions={[session({ id: "sess-1", status: "failed", failReason: "No activity for 30 minutes" })]}
+        onSelect={() => {}}
+      />
+    );
+    const reason = document.querySelector(".card-fail-reason");
+    expect(reason?.textContent).toBe("No activity for 30 minutes");
+    expect(reason?.getAttribute("title")).toBe("No activity for 30 minutes");
+  });
+
+  it("does not show a failure-reason line on a card that is not failed", () => {
+    render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
+    expect(document.querySelector(".card-fail-reason")).toBeNull();
+  });
+
+  it("shows a failure reason on a failed child card", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "failed", failReason: "boom" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const childCard = document.querySelector(".child-card");
+    expect(childCard?.querySelector(".card-fail-reason")?.textContent).toBe("boom");
   });
 
   it("renders a top-level session under its status column", () => {
