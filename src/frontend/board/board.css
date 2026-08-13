@@ -108,6 +108,79 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Global ambient status strip — a row of clickable status filters sitting
+   above the board, giving an at-a-glance read on the whole fleet without
+   having to scan every column. */
+.status-strip {
+  display: flex;
+  gap: var(--ck-space-3);
+  padding: var(--ck-space-4) var(--ck-space-5);
+  background: var(--ck-panel);
+  border-bottom: 1px solid var(--ck-border);
+}
+
+.status-strip button {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--ck-font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ck-text-muted);
+  background: transparent;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.status-strip button::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ck-text-faint);
+}
+
+.status-strip button[data-status="queued"]::before {
+  background: var(--ck-queued);
+}
+.status-strip button[data-status="running"]::before {
+  background: var(--ck-running);
+}
+.status-strip button[data-status="waiting"]::before {
+  background: var(--ck-waiting);
+}
+.status-strip button[data-status="done"]::before {
+  background: var(--ck-done);
+}
+.status-strip button[data-status="failed"]::before {
+  background: var(--ck-failed);
+}
+
+.status-strip button:hover {
+  border-color: var(--ck-text-faint);
+  color: var(--ck-text);
+}
+
+.status-strip button[aria-pressed="true"] {
+  background: var(--ck-panel-raised);
+  border-color: var(--ck-text-faint);
+  color: var(--ck-text);
+}
+
+.status-strip button[data-empty] {
+  opacity: 0.45;
+}
+
+.status-strip button:focus-visible {
+  outline: 2px solid var(--ck-running);
+  outline-offset: 2px;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -125,20 +198,27 @@ body {
   padding-bottom: 2rem;
 }
 
+.column-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  padding: 0.85rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--ck-border);
+  position: sticky;
+  top: 0;
+  background: var(--ck-bg);
+  z-index: 1;
+}
+
 .column h2 {
   margin: 0;
-  padding: 0.85rem 1rem 0.7rem;
   font-family: var(--ck-font-mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ck-text-muted);
-  border-bottom: 1px solid var(--ck-border);
-  position: sticky;
-  top: 0;
-  background: var(--ck-bg);
-  z-index: 1;
 }
 
 .column h2::before {
@@ -152,22 +232,33 @@ body {
   vertical-align: middle;
 }
 
+.column-count {
+  font-family: var(--ck-font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--ck-text-faint);
+  background: var(--ck-panel-raised);
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+  white-space: nowrap;
+}
+
 /* Status accent per column, hooked off the semantic data-status attribute
    rather than DOM position — resilient to column reordering. */
-.column[data-status="queued"] h2::before {
+.column[data-status="queued"] .column-header h2::before {
   background: var(--ck-queued);
 }
-.column[data-status="running"] h2::before {
+.column[data-status="running"] .column-header h2::before {
   background: var(--ck-running);
   box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18);
 }
-.column[data-status="waiting"] h2::before {
+.column[data-status="waiting"] .column-header h2::before {
   background: var(--ck-waiting);
 }
-.column[data-status="done"] h2::before {
+.column[data-status="done"] .column-header h2::before {
   background: var(--ck-done);
 }
-.column[data-status="failed"] h2::before {
+.column[data-status="failed"] .column-header h2::before {
   background: var(--ck-failed);
 }
 
@@ -355,7 +446,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .column h2 {
+  .column-header {
     position: static;
   }
 }
