@@ -75,8 +75,9 @@ describe("buildTimeline", () => {
     expect(entries.map((e) => e.id)).toEqual([3, 2, 1]);
   });
 
-  it("exposes the parsed payload as raw", () => {
+  it("exposes the parsed payload as a single-element raw array, with count 1", () => {
     const [entry] = buildTimeline([event({ payload: JSON.stringify({ tool_name: "Bash" }) })]);
-    expect(entry.raw).toEqual({ tool_name: "Bash" });
+    expect(entry.raw).toEqual([{ tool_name: "Bash" }]);
+    expect(entry.count).toBe(1);
   });
 });
