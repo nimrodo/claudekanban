@@ -96,6 +96,15 @@ describe("Board", () => {
     expect(within(strip).getByRole("button", { name: /queued/ })).toHaveTextContent("queued 0/1");
   });
 
+  it("marks a strip button with data-empty when its status has zero sessions, but keeps it clickable", () => {
+    render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    const queuedButton = within(strip).getByRole("button", { name: /queued/ });
+    expect(queuedButton).toHaveAttribute("data-empty", "true");
+    expect(within(strip).getByRole("button", { name: /running/ })).not.toHaveAttribute("data-empty");
+    expect(queuedButton).not.toBeDisabled();
+  });
+
   it("shows a plain column-badge count when nothing is filtered", () => {
     render(
       <Board
