@@ -27,6 +27,7 @@ const session: Session = {
   cwd: "/tmp/project",
   model: null,
   recap: null,
+  failReason: null,
 };
 
 describe("applySessionChange", () => {

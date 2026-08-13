@@ -44,6 +44,7 @@ describe("synthesizeSubagentSession", () => {
       cwd: "/tmp/project",
       model: null,
       recap: null,
+      failReason: null,
     });
   });
 
@@ -106,6 +107,7 @@ describe("synthesizeSubagentStart", () => {
       cwd: "/tmp/project",
       model: null,
       recap: null,
+      failReason: null,
     });
   });
 
@@ -129,6 +131,7 @@ describe("synthesizeSubagentStart", () => {
       cwd: "/tmp/project",
       model: null,
       recap: null,
+      failReason: null,
     };
     const result = synthesizeSubagentStart(doneChild, startPayload(), "2026-08-09T10:00:20.000Z");
     expect(result).toEqual(doneChild);
@@ -146,6 +149,7 @@ describe("synthesizeSubagentStart", () => {
       cwd: "/tmp/project",
       model: null,
       recap: null,
+      failReason: null,
     };
     const result = synthesizeSubagentStart(failedChild, startPayload(), "2026-08-09T10:00:20.000Z");
     expect(result).toEqual(failedChild);
@@ -163,6 +167,7 @@ describe("synthesizeSubagentStart", () => {
       cwd: "/tmp/project",
       model: null,
       recap: null,
+      failReason: null,
     };
     const result = synthesizeSubagentStart(runningChild, startPayload(), "2026-08-09T10:00:05.000Z");
     expect(result).toEqual(runningChild);
@@ -181,6 +186,7 @@ describe("synthesizeSubagentStop", () => {
     cwd: "/tmp/project",
     model: null,
     recap: null,
+    failReason: null,
   };
 
   function stopPayload(overrides: Partial<SubagentStopPayload> = {}): SubagentStopPayload {
@@ -225,6 +231,7 @@ describe("mergeSubagentTitle", () => {
     cwd: "/tmp/project",
     model: null,
     recap: null,
+    failReason: null,
   };
 
   function toolUsePayload(overrides: Partial<PostToolUsePayload> = {}): PostToolUsePayload {

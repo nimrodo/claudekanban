@@ -38,6 +38,7 @@ export function createIngestHandler(db: Database.Database) {
       cwd: payload.cwd ?? existing?.cwd ?? "",
       model: payload.model ?? existing?.model ?? null,
       recap: payload.hook_event_name === "Stop" ? payload.last_assistant_message ?? null : existing?.recap ?? null,
+      failReason: existing?.failReason ?? null,
     };
     applySessionChange(db, updatedSession, receivedAt, eventRecord.id);
 

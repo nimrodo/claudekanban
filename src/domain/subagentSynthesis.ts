@@ -26,6 +26,7 @@ export function synthesizeSubagentSession(payload: PostToolUsePayload, receivedA
     cwd: payload.cwd,
     model: null,
     recap: null,
+    failReason: null,
   };
 }
 
@@ -51,6 +52,7 @@ export function synthesizeSubagentStart(existing: Session | undefined, payload: 
     cwd: payload.cwd,
     model: null,
     recap: null,
+    failReason: null,
   };
 }
 

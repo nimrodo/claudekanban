@@ -25,6 +25,7 @@ const baseSession: Session = {
   cwd: "/tmp/project",
   model: "claude-sonnet-5",
   recap: null,
+  failReason: null,
 };
 
 describe("runStaleSweep", () => {
