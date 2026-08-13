@@ -17,10 +17,30 @@ function fraction(visible: number, total: number): string {
   return visible === total ? `${total}` : `${visible}/${total}`;
 }
 
+function visibleCountByStatus(
+  topLevel: SessionDto[],
+  childrenByParent: GroupedSessions["childrenByParent"],
+  filter: SessionStatus | null
+): Record<SessionStatus, number> {
+  const counts = Object.fromEntries(STATUS_COLUMNS.map((status) => [status, 0])) as Record<
+    SessionStatus,
+    number
+  >;
+  for (const s of topLevel) {
+    if (!matchesFilter(s, filter, childrenByParent)) continue;
+    counts[s.status]++;
+    for (const child of childrenByParent.get(s.id) ?? []) {
+      counts[child.status]++;
+    }
+  }
+  return counts;
+}
+
 export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect: (id: string) => void }) {
   const { topLevel, childrenByParent } = groupSessions(sessions);
   const counts = countByStatus(sessions);
   const [statusFilter, setStatusFilter] = useState<SessionStatus | null>(null);
+  const visibleCounts = visibleCountByStatus(topLevel, childrenByParent, statusFilter);
 
   return (
     <>
@@ -33,7 +53,7 @@ export function Board({ sessions, onSelect }: { sessions: SessionDto[]; onSelect
             aria-pressed={statusFilter === status}
             onClick={() => setStatusFilter((current) => (current === status ? null : status))}
           >
-            {status} {counts[status]}
+            {status} {fraction(visibleCounts[status], counts[status])}
           </button>
         ))}
       </div>
