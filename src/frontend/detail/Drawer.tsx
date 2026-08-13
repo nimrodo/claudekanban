@@ -114,6 +114,13 @@ export function Drawer({
               </div>
             )}
 
+            {detail.session.status === "failed" && detail.session.failReason && (
+              <div className="drawer-fail-reason">
+                <h3>Failure reason</h3>
+                <pre className="timeline-raw">{detail.session.failReason}</pre>
+              </div>
+            )}
+
             <div className="drawer-timeline">
               <h3>Timeline</h3>
               {timeline.map((entry) => (
