@@ -1,5 +1,7 @@
 import type { EventDto } from "../lib/transport/Transport.js";
 
+export type TimelineIconKind = "start" | "stop" | "tool" | "spawn" | "permission" | "notification" | "other";
+
 export interface TimelineEntry {
   id: number;
   ts: string;
@@ -7,6 +9,7 @@ export interface TimelineEntry {
   summary: string;
   raw: unknown[];
   count: number;
+  iconKind: TimelineIconKind;
 }
 
 interface ToolCallPayload {
@@ -44,6 +47,23 @@ function summarize(type: string, payload: ToolCallPayload): string {
   }
 }
 
+function iconKind(type: string, payload: ToolCallPayload): TimelineIconKind {
+  switch (type) {
+    case "SessionStart":
+      return "start";
+    case "Stop":
+      return "stop";
+    case "PostToolUse":
+      return payload.tool_name === "Agent" || payload.tool_name === "Task" ? "spawn" : "tool";
+    case "PermissionRequest":
+      return "permission";
+    case "Notification":
+      return "notification";
+    default:
+      return "other";
+  }
+}
+
 function groupingKey(type: string, payload: ToolCallPayload): string {
   switch (type) {
     case "PostToolUse":
@@ -62,6 +82,7 @@ interface MappedEvent {
   summary: string;
   raw: unknown;
   key: string;
+  iconKind: TimelineIconKind;
 }
 
 interface Group {
@@ -86,6 +107,7 @@ export function buildTimeline(events: EventDto[]): TimelineEntry[] {
         summary: summarize(event.type, payload),
         raw,
         key: groupingKey(event.type, payload),
+        iconKind: iconKind(event.type, payload),
       };
     })
     .sort((a, b) => a.id - b.id);
@@ -110,6 +132,7 @@ export function buildTimeline(events: EventDto[]): TimelineEntry[] {
         summary: latest.summary,
         raw: entries.map((e) => e.raw),
         count: entries.length,
+        iconKind: latest.iconKind,
       };
     })
     .sort((a, b) => b.id - a.id);
