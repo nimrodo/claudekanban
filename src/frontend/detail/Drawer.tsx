@@ -125,7 +125,9 @@ export function Drawer({
                     </button>
                   </div>
                   {expanded.has(entry.id) && (
-                    <pre className="timeline-raw">{JSON.stringify(entry.raw, null, 2)}</pre>
+                    <pre className="timeline-raw">
+                      {JSON.stringify(entry.raw.length === 1 ? entry.raw[0] : entry.raw, null, 2)}
+                    </pre>
                   )}
                 </div>
               ))}

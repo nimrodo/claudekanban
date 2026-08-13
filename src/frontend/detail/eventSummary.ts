@@ -5,7 +5,8 @@ export interface TimelineEntry {
   ts: string;
   type: string;
   summary: string;
-  raw: unknown;
+  raw: unknown[];
+  count: number;
 }
 
 interface ToolCallPayload {
@@ -57,7 +58,8 @@ export function buildTimeline(events: EventDto[]): TimelineEntry[] {
         ts: event.ts,
         type: event.type,
         summary: summarize(event.type, (raw ?? {}) as ToolCallPayload),
-        raw,
+        raw: [raw],
+        count: 1,
       };
     })
     .sort((a, b) => b.id - a.id);
