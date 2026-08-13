@@ -39,6 +39,7 @@ describe("runStaleSweep", () => {
     const session = getSession(db, "sess-1");
     expect(session?.status).toBe("failed");
     expect(session?.endedAt).toBe("2026-08-12T09:15:00.000Z");
+    expect(session?.failReason).toBe("No activity for 10 minutes");
   });
 
   it("leaves a recently active running session alone", () => {
