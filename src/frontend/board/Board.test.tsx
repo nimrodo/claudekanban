@@ -36,6 +36,47 @@ describe("Board", () => {
     expect(within(strip).getByRole("button", { name: /queued/ })).toHaveTextContent("0");
   });
 
+  it("filters visible cards to the clicked status, and shows them again when clicked again", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "sess-running", status: "running" }),
+          session({ id: "sess-failed", status: "failed" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    const failedButton = within(strip).getByRole("button", { name: /failed/ });
+
+    fireEvent.click(failedButton);
+    const failedColumn = screen.getByRole("heading", { name: "failed" }).closest(".column");
+    expect(failedColumn?.querySelector(".card")).not.toBeNull();
+    const runningColumn = screen.getByRole("heading", { name: "running" }).closest(".column");
+    expect(runningColumn?.querySelector(".card")).toBeNull();
+
+    fireEvent.click(failedButton);
+    expect(runningColumn?.querySelector(".card")).not.toBeNull();
+  });
+
+  it("keeps a top-level card visible under a filter if a nested subagent matches, even though the card's own status does not", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "failed" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    fireEvent.click(within(strip).getByRole("button", { name: /failed/ }));
+
+    const runningColumn = screen.getByRole("heading", { name: "running" }).closest(".column");
+    expect(runningColumn?.querySelector(".card")).not.toBeNull();
+    expect(screen.getByText("Explore")).toBeInTheDocument();
+  });
+
   it("renders a top-level session under its status column", () => {
     render(<Board sessions={[session({ id: "sess-1", status: "running" })]} onSelect={() => {}} />);
     expect(screen.getByRole("heading", { name: "running" })).toBeInTheDocument();
