@@ -19,6 +19,7 @@ function detail(
       cwd: "/tmp/project",
       model: "claude-sonnet-5",
       recap: null,
+      failReason: null,
       ...overrides,
     },
     events: events ?? [
@@ -82,6 +83,29 @@ describe("Drawer", () => {
     expect(screen.getByText(/"ls"/)).toBeInTheDocument();
     expect(screen.getByText(/"pwd"/)).toBeInTheDocument();
     expect(screen.getByText(/"whoami"/)).toBeInTheDocument();
+  });
+
+  it("shows the failure reason when status is failed and failReason is set", () => {
+    render(
+      <Drawer
+        open
+        detail={detail({ status: "failed", failReason: "No activity for 30 minutes" })}
+        loading={false}
+        error={null}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText("No activity for 30 minutes")).toBeInTheDocument();
+  });
+
+  it("does not show a failure-reason section when status is failed but no reason was recorded", () => {
+    render(<Drawer open detail={detail({ status: "failed", failReason: null })} loading={false} error={null} onClose={() => {}} />);
+    expect(screen.queryByText("Failure reason")).not.toBeInTheDocument();
+  });
+
+  it("does not show a failure-reason section when status is not failed", () => {
+    render(<Drawer open detail={detail({ status: "running", failReason: null })} loading={false} error={null} onClose={() => {}} />);
+    expect(screen.queryByText("Failure reason")).not.toBeInTheDocument();
   });
 
   it("shows the recap when status is done and recap is set", () => {
