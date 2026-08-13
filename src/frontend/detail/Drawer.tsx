@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SessionDetailResponse } from "../lib/transport/Transport.js";
 import { buildTimeline } from "./eventSummary.js";
+import { TimelineIcon } from "./TimelineIcon.js";
 import "./drawer.css";
 
 export function Drawer({
@@ -118,8 +119,10 @@ export function Drawer({
               {timeline.map((entry) => (
                 <div key={entry.id} className="timeline-entry">
                   <div className="timeline-row">
+                    <TimelineIcon kind={entry.iconKind} />
                     <span className="timeline-ts">{entry.ts}</span>
                     <span className="timeline-summary">{entry.summary}</span>
+                    {entry.count > 1 && <span className="timeline-count">×{entry.count}</span>}
                     <button type="button" className="timeline-toggle" onClick={() => toggleExpanded(entry.id)}>
                       {expanded.has(entry.id) ? "Hide raw" : "Show raw"}
                     </button>
