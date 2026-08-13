@@ -77,6 +77,25 @@ describe("Board", () => {
     expect(screen.getByText("Explore")).toBeInTheDocument();
   });
 
+  it("shows a visible/total fraction on the strip for statuses whose sessions are partly hidden by the filter, keeping matched statuses as a plain count", () => {
+    render(
+      <Board
+        sessions={[
+          session({ id: "parent-1", owner: "main", status: "running" }),
+          session({ id: "child-1", owner: "Explore", parentSessionId: "parent-1", status: "failed" }),
+          session({ id: "parent-2", owner: "main", status: "queued" }),
+        ]}
+        onSelect={() => {}}
+      />
+    );
+    const strip = screen.getByRole("group", { name: "Filter by status" });
+    fireEvent.click(within(strip).getByRole("button", { name: /failed/ }));
+
+    expect(within(strip).getByRole("button", { name: /running/ })).toHaveTextContent("running 1");
+    expect(within(strip).getByRole("button", { name: /failed/ })).toHaveTextContent("failed 1");
+    expect(within(strip).getByRole("button", { name: /queued/ })).toHaveTextContent("queued 0/1");
+  });
+
   it("shows a plain column-badge count when nothing is filtered", () => {
     render(
       <Board
