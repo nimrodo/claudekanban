@@ -70,6 +70,39 @@ describe("buildTimeline", () => {
     expect(entry.summary).toBe("SomethingNew");
   });
 
+  it("collapses consecutive PostToolUse calls with the same tool_name into one entry", () => {
+    const entries = buildTimeline([
+      event({ id: 1, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+      event({ id: 2, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+      event({ id: 3, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+    ]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].count).toBe(3);
+    expect(entries[0].id).toBe(3);
+    expect(entries[0].raw).toEqual([
+      { tool_name: "Bash" },
+      { tool_name: "Bash" },
+      { tool_name: "Bash" },
+    ]);
+  });
+
+  it("does not collapse consecutive PostToolUse calls with different tool_name", () => {
+    const entries = buildTimeline([
+      event({ id: 1, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+      event({ id: 2, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Read" }) }),
+    ]);
+    expect(entries).toHaveLength(2);
+  });
+
+  it("does not collapse two same-tool calls separated by a different event", () => {
+    const entries = buildTimeline([
+      event({ id: 1, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+      event({ id: 2, type: "Notification", payload: JSON.stringify({ notification_type: "idle_prompt" }) }),
+      event({ id: 3, type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+    ]);
+    expect(entries).toHaveLength(3);
+  });
+
   it("orders entries newest-first by id", () => {
     const entries = buildTimeline([event({ id: 1 }), event({ id: 3 }), event({ id: 2 })]);
     expect(entries.map((e) => e.id)).toEqual([3, 2, 1]);
