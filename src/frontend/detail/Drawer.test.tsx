@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Drawer } from "./Drawer.js";
-import type { SessionDetailResponse } from "../lib/transport/Transport.js";
+import type { EventDto, SessionDetailResponse } from "../lib/transport/Transport.js";
 
-function detail(overrides: Partial<SessionDetailResponse["session"]> = {}): SessionDetailResponse {
+function detail(
+  overrides: Partial<SessionDetailResponse["session"]> = {},
+  events?: EventDto[]
+): SessionDetailResponse {
   return {
     session: {
       id: "sess-1",
@@ -18,7 +21,7 @@ function detail(overrides: Partial<SessionDetailResponse["session"]> = {}): Sess
       recap: null,
       ...overrides,
     },
-    events: [
+    events: events ?? [
       { id: 1, sessionId: "sess-1", ts: "2026-08-08T10:00:00.000Z", type: "SessionStart", payload: "{}" },
       {
         id: 2,
@@ -55,6 +58,30 @@ describe("Drawer", () => {
     expect(screen.queryByText(/"tool_name"/)).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByText("Show raw")[0]);
     expect(screen.getByText(/"tool_name"/)).toBeInTheDocument();
+  });
+
+  it("renders one timeline icon per entry, keyed by iconKind", () => {
+    render(<Drawer open detail={detail()} loading={false} error={null} onClose={() => {}} />);
+    const icons = document.querySelectorAll(".timeline-icon");
+    expect(Array.from(icons).map((el) => el.getAttribute("data-icon-kind"))).toEqual(["tool", "start"]);
+  });
+
+  it("collapses 3 consecutive identical tool calls into one row with a count badge, and shows all 3 raw payloads on expand", () => {
+    const repeatedEvents: EventDto[] = [
+      { id: 1, sessionId: "sess-1", ts: "2026-08-08T10:00:00.000Z", type: "SessionStart", payload: "{}" },
+      { id: 2, sessionId: "sess-1", ts: "2026-08-08T10:00:01.000Z", type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash", tool_input: { command: "ls" } }) },
+      { id: 3, sessionId: "sess-1", ts: "2026-08-08T10:00:02.000Z", type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash", tool_input: { command: "pwd" } }) },
+      { id: 4, sessionId: "sess-1", ts: "2026-08-08T10:00:03.000Z", type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash", tool_input: { command: "whoami" } }) },
+    ];
+    render(<Drawer open detail={detail({}, repeatedEvents)} loading={false} error={null} onClose={() => {}} />);
+
+    expect(screen.getAllByText("Called Bash")).toHaveLength(1);
+    expect(screen.getByText("×3")).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText("Show raw")[0]);
+    expect(screen.getByText(/"ls"/)).toBeInTheDocument();
+    expect(screen.getByText(/"pwd"/)).toBeInTheDocument();
+    expect(screen.getByText(/"whoami"/)).toBeInTheDocument();
   });
 
   it("shows the recap when status is done and recap is set", () => {
