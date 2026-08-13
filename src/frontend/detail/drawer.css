@@ -237,9 +237,27 @@
   white-space: nowrap;
 }
 
+.timeline-icon {
+  flex: none;
+  display: inline-flex;
+  color: var(--ck-text-faint);
+}
+
 .timeline-summary {
   flex: 1;
   color: var(--ck-text);
+}
+
+.timeline-count {
+  flex: none;
+  font-family: var(--ck-font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--ck-text-faint);
+  background: var(--ck-panel-raised);
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+  white-space: nowrap;
 }
 
 .timeline-toggle {
