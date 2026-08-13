@@ -54,6 +54,15 @@ describe("synthesizeSubagentSession", () => {
       "2026-08-08T10:00:05.000Z"
     );
     expect(child?.status).toBe("failed");
+    expect(child?.failReason).toBe("timed out");
+  });
+
+  it("stringifies a non-string tool_response.error into failReason", () => {
+    const child = synthesizeSubagentSession(
+      payload({ tool_response: { agentId: "agent-789", error: { code: 137, message: "killed" } } }),
+      "2026-08-08T10:00:05.000Z"
+    );
+    expect(child?.failReason).toBe(JSON.stringify({ code: 137, message: "killed" }));
   });
 
   it("defaults owner to \"unknown\" when subagent_type is missing", () => {
@@ -271,6 +280,7 @@ describe("mergeSubagentTitle", () => {
     );
     expect(merged.status).toBe("failed");
     expect(merged.endedAt).toBe("2026-08-09T10:00:18.000Z");
+    expect(merged.failReason).toBe("boom");
   });
 
   it("does not change endedAt when already failed and an error is present again", () => {
