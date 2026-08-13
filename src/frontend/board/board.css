@@ -340,6 +340,16 @@ body {
   order: 2;
 }
 
+.card-fail-reason {
+  font-family: var(--ck-font-mono);
+  font-size: 0.7rem;
+  color: var(--ck-failed);
+  order: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .card-status {
   font-family: var(--ck-font-mono);
   font-size: 0.68rem;
@@ -431,6 +441,10 @@ body {
 .child-card .card-status {
   font-size: 0.62rem;
   color: var(--ck-text-muted);
+}
+
+.child-card .card-fail-reason {
+  font-size: 0.68rem;
 }
 
 .column-empty {

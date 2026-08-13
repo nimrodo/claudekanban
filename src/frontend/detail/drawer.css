@@ -175,6 +175,7 @@
 }
 
 .drawer-recap h3,
+.drawer-fail-reason h3,
 .drawer-timeline h3 {
   font-family: var(--ck-font-mono);
   font-size: 0.68rem;
@@ -183,6 +184,15 @@
   letter-spacing: 0.12em;
   color: var(--ck-text-muted);
   margin: 0 0 0.6rem;
+}
+
+.drawer-fail-reason {
+  margin-bottom: 1.2rem;
+}
+
+.drawer-fail-reason .timeline-raw {
+  border-left: 3px solid var(--ck-failed);
+  margin: 0;
 }
 
 /* Timeline spine: a vertical rail (::before on the list, dots on each
