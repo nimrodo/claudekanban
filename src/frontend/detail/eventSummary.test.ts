@@ -112,6 +112,26 @@ describe("buildTimeline", () => {
     expect(entries.map((e) => e.id)).toEqual([3, 2, 1]);
   });
 
+  it("classifies a subagent-spawning PostToolUse call as iconKind spawn, and a plain tool call as tool", () => {
+    const [spawn] = buildTimeline([
+      event({ type: "PostToolUse", payload: JSON.stringify({ tool_name: "Agent", tool_input: { subagent_type: "Explore" } }) }),
+    ]);
+    expect(spawn.iconKind).toBe("spawn");
+
+    const [tool] = buildTimeline([
+      event({ type: "PostToolUse", payload: JSON.stringify({ tool_name: "Bash" }) }),
+    ]);
+    expect(tool.iconKind).toBe("tool");
+  });
+
+  it("classifies SessionStart as start, Stop as stop, PermissionRequest as permission, Notification as notification, and unknown types as other", () => {
+    expect(buildTimeline([event({ type: "SessionStart" })])[0].iconKind).toBe("start");
+    expect(buildTimeline([event({ type: "Stop" })])[0].iconKind).toBe("stop");
+    expect(buildTimeline([event({ type: "PermissionRequest" })])[0].iconKind).toBe("permission");
+    expect(buildTimeline([event({ type: "Notification" })])[0].iconKind).toBe("notification");
+    expect(buildTimeline([event({ type: "SomethingNew" })])[0].iconKind).toBe("other");
+  });
+
   it("exposes the parsed payload as a single-element raw array, with count 1", () => {
     const [entry] = buildTimeline([event({ payload: JSON.stringify({ tool_name: "Bash" }) })]);
     expect(entry.raw).toEqual([{ tool_name: "Bash" }]);
