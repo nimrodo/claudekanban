@@ -350,6 +350,16 @@ body {
   white-space: nowrap;
 }
 
+.card-activity {
+  font-family: var(--ck-font-mono);
+  font-size: 0.7rem;
+  color: var(--ck-text-muted);
+  order: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .card-status {
   font-family: var(--ck-font-mono);
   font-size: 0.68rem;
@@ -444,6 +454,10 @@ body {
 }
 
 .child-card .card-fail-reason {
+  font-size: 0.68rem;
+}
+
+.child-card .card-activity {
   font-size: 0.68rem;
 }
 

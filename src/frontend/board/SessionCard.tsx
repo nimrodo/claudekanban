@@ -33,6 +33,9 @@ export function SessionCard({
       <div className="card-owner">{session.owner}</div>
       <div className="card-id">{session.id.slice(0, 8)}</div>
       <div className="card-status">{session.status}</div>
+      {session.status === "running" && session.lastActivitySummary && (
+        <div className="card-activity" title={session.lastActivitySummary}>{session.lastActivitySummary}</div>
+      )}
       {session.status === "failed" && session.failReason && (
         <div className="card-fail-reason" title={session.failReason}>{session.failReason}</div>
       )}
@@ -61,6 +64,9 @@ export function SessionCard({
                 <span className="card-owner">{child.owner}</span>
                 <span className="card-status">{child.status}</span>
               </div>
+              {child.status === "running" && child.lastActivitySummary && (
+                <div className="card-activity" title={child.lastActivitySummary}>{child.lastActivitySummary}</div>
+              )}
               {child.status === "failed" && child.failReason && (
                 <div className="card-fail-reason" title={child.failReason}>{child.failReason}</div>
               )}
