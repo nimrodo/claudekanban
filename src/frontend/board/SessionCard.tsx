@@ -33,7 +33,7 @@ export function SessionCard({
       <div className="card-owner">{session.owner}</div>
       <div className="card-id">{session.id.slice(0, 8)}</div>
       <div className="card-status">{session.status}</div>
-      {session.status === "running" && session.lastActivitySummary && (
+      {(session.status === "running" || session.status === "waiting") && session.lastActivitySummary && (
         <div className="card-activity" title={session.lastActivitySummary}>{session.lastActivitySummary}</div>
       )}
       {session.status === "failed" && session.failReason && (
@@ -64,7 +64,7 @@ export function SessionCard({
                 <span className="card-owner">{child.owner}</span>
                 <span className="card-status">{child.status}</span>
               </div>
-              {child.status === "running" && child.lastActivitySummary && (
+              {(child.status === "running" || child.status === "waiting") && child.lastActivitySummary && (
                 <div className="card-activity" title={child.lastActivitySummary}>{child.lastActivitySummary}</div>
               )}
               {child.status === "failed" && child.failReason && (

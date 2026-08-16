@@ -43,8 +43,20 @@ describe("summarizeEvent", () => {
     expect(summarizeEvent("Stop", {})).toBe("Session finished");
   });
 
+  it("summarizes SubagentStart with an agent_type", () => {
+    expect(summarizeEvent("SubagentStart", { agent_type: "Explore" })).toBe("Running Explore subagent");
+  });
+
+  it("summarizes SubagentStart without an agent_type", () => {
+    expect(summarizeEvent("SubagentStart", {})).toBe("Subagent started");
+  });
+
+  it("summarizes SubagentStop", () => {
+    expect(summarizeEvent("SubagentStop", {})).toBe("Subagent finished");
+  });
+
   it("falls back to the raw type for an unrecognized event type", () => {
-    expect(summarizeEvent("SubagentStart", {})).toBe("SubagentStart");
+    expect(summarizeEvent("SomeUnknownEvent", {})).toBe("SomeUnknownEvent");
   });
 });
 
@@ -63,5 +75,10 @@ describe("classifyIconKind", () => {
     expect(classifyIconKind("PermissionRequest", {})).toBe("permission");
     expect(classifyIconKind("Notification", {})).toBe("notification");
     expect(classifyIconKind("SomethingNew", {})).toBe("other");
+  });
+
+  it("classifies SubagentStart as spawn and SubagentStop as stop", () => {
+    expect(classifyIconKind("SubagentStart", {})).toBe("spawn");
+    expect(classifyIconKind("SubagentStop", {})).toBe("stop");
   });
 });
