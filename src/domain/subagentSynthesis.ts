@@ -1,5 +1,5 @@
 import type { Session } from "../store/sessionStore.js";
-import { summarizeEvent } from "./activitySummary.js";
+import { summarizeEvent, type ActivityPayload } from "./activitySummary.js";
 
 export interface PostToolUsePayload {
   hook_event_name: "PostToolUse";
@@ -60,7 +60,7 @@ export function synthesizeSubagentStart(existing: Session | undefined, payload: 
     model: null,
     recap: null,
     failReason: null,
-    lastActivitySummary: summarizeEvent(payload.hook_event_name, {}),
+    lastActivitySummary: summarizeEvent(payload.hook_event_name, payload as ActivityPayload),
   };
 }
 
@@ -78,7 +78,7 @@ export function synthesizeSubagentStop(existing: Session, payload: SubagentStopP
     ...existing,
     status: "done",
     endedAt: receivedAt,
-    lastActivitySummary: summarizeEvent(payload.hook_event_name, {}),
+    lastActivitySummary: summarizeEvent(payload.hook_event_name, payload as ActivityPayload),
   };
 }
 
