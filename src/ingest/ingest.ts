@@ -4,6 +4,7 @@ import { insertEvent } from "../store/eventStore.js";
 import { getSession, type Session } from "../store/sessionStore.js";
 import { applySessionChange } from "../store/applyChange.js";
 import { deriveStatus, type HookPayload } from "../domain/stateMachine.js";
+import { summarizeEvent } from "../domain/activitySummary.js";
 import {
   synthesizeSubagentSession,
   synthesizeSubagentStart,
@@ -39,6 +40,7 @@ export function createIngestHandler(db: Database.Database) {
       model: payload.model ?? existing?.model ?? null,
       recap: payload.hook_event_name === "Stop" ? payload.last_assistant_message ?? null : existing?.recap ?? null,
       failReason: existing?.failReason ?? null,
+      lastActivitySummary: summarizeEvent(payload.hook_event_name, payload),
     };
     applySessionChange(db, updatedSession, receivedAt, eventRecord.id);
 

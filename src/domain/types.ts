@@ -12,4 +12,5 @@ export interface SessionShape {
   model: string | null;
   recap: string | null;
   failReason: string | null;
+  lastActivitySummary: string | null;
 }

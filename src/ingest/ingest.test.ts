@@ -70,6 +70,19 @@ describe("createIngestHandler", () => {
     expect(session?.endedAt).not.toBeNull();
   });
 
+  it("sets lastActivitySummary from the summarized event on every write", () => {
+    const db = testDb();
+    const handler = createIngestHandler(db);
+    handler({ body: { hook_event_name: "SessionStart", session_id: "sess-1", cwd: "/tmp" } } as Request, fakeRes());
+    expect(getSession(db, "sess-1")?.lastActivitySummary).toBe("Session started");
+
+    handler(
+      { body: { hook_event_name: "PostToolUse", session_id: "sess-1", cwd: "/tmp", tool_name: "Bash" } } as Request,
+      fakeRes()
+    );
+    expect(getSession(db, "sess-1")?.lastActivitySummary).toBe("Called Bash");
+  });
+
   it("synthesizes a child session from a PostToolUse Agent spawn", () => {
     const db = testDb();
     const handler = createIngestHandler(db);

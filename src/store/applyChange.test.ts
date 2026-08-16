@@ -28,6 +28,7 @@ const session: Session = {
   model: null,
   recap: null,
   failReason: null,
+  lastActivitySummary: null,
 };
 
 describe("applySessionChange", () => {

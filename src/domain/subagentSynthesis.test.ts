@@ -45,6 +45,7 @@ describe("synthesizeSubagentSession", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: "Spawned Explore subagent",
     });
   });
 
@@ -89,6 +90,11 @@ describe("synthesizeSubagentSession", () => {
     );
     expect(child?.title).toBeNull();
   });
+
+  it("sets lastActivitySummary from the spawning PostToolUse call", () => {
+    const child = synthesizeSubagentSession(payload({}), "2026-08-08T10:00:05.000Z");
+    expect(child?.lastActivitySummary).toBe("Spawned Explore subagent");
+  });
 });
 
 describe("synthesizeSubagentStart", () => {
@@ -117,6 +123,7 @@ describe("synthesizeSubagentStart", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: "SubagentStart",
     });
   });
 
@@ -141,6 +148,7 @@ describe("synthesizeSubagentStart", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: "Spawned Explore subagent",
     };
     const result = synthesizeSubagentStart(doneChild, startPayload(), "2026-08-09T10:00:20.000Z");
     expect(result).toEqual(doneChild);
@@ -159,6 +167,7 @@ describe("synthesizeSubagentStart", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: "Spawned Explore subagent",
     };
     const result = synthesizeSubagentStart(failedChild, startPayload(), "2026-08-09T10:00:20.000Z");
     expect(result).toEqual(failedChild);
@@ -177,6 +186,7 @@ describe("synthesizeSubagentStart", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: "SubagentStart",
     };
     const result = synthesizeSubagentStart(runningChild, startPayload(), "2026-08-09T10:00:05.000Z");
     expect(result).toEqual(runningChild);
@@ -196,6 +206,7 @@ describe("synthesizeSubagentStop", () => {
     model: null,
     recap: null,
     failReason: null,
+    lastActivitySummary: "SubagentStart",
   };
 
   function stopPayload(overrides: Partial<SubagentStopPayload> = {}): SubagentStopPayload {
@@ -210,7 +221,12 @@ describe("synthesizeSubagentStop", () => {
 
   it("transitions a running child to done", () => {
     const updated = synthesizeSubagentStop(runningChild, stopPayload(), "2026-08-09T10:00:17.000Z");
-    expect(updated).toEqual({ ...runningChild, status: "done", endedAt: "2026-08-09T10:00:17.000Z" });
+    expect(updated).toEqual({
+      ...runningChild,
+      status: "done",
+      endedAt: "2026-08-09T10:00:17.000Z",
+      lastActivitySummary: "SubagentStop",
+    });
   });
 
   it("never regresses an already-failed child back to done", () => {
@@ -241,6 +257,7 @@ describe("mergeSubagentTitle", () => {
     model: null,
     recap: null,
     failReason: null,
+    lastActivitySummary: "SubagentStop",
   };
 
   function toolUsePayload(overrides: Partial<PostToolUsePayload> = {}): PostToolUsePayload {
@@ -291,5 +308,10 @@ describe("mergeSubagentTitle", () => {
       "2026-08-09T10:00:18.000Z"
     );
     expect(merged.endedAt).toBe("2026-08-09T10:00:17.000Z");
+  });
+
+  it("sets lastActivitySummary from the merging PostToolUse call", () => {
+    const merged = mergeSubagentTitle(doneChild, toolUsePayload(), "2026-08-09T10:00:18.000Z");
+    expect(merged.lastActivitySummary).toBe("Spawned Explore subagent");
   });
 });

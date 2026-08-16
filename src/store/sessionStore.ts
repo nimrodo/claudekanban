@@ -18,6 +18,7 @@ interface SessionRow {
   model: string | null;
   recap: string | null;
   fail_reason: string | null;
+  last_activity_summary: string | null;
 }
 
 function rowToSession(row: SessionRow): Session {
@@ -33,19 +34,21 @@ function rowToSession(row: SessionRow): Session {
     model: row.model,
     recap: row.recap,
     failReason: row.fail_reason,
+    lastActivitySummary: row.last_activity_summary,
   };
 }
 
 export function upsertSession(db: Database.Database, session: Session): void {
   db.prepare(
-    `INSERT INTO session (id, parent_session_id, owner, title, status, started_at, ended_at, cwd, model, recap, fail_reason)
-     VALUES (@id, @parentSessionId, @owner, @title, @status, @startedAt, @endedAt, @cwd, @model, @recap, @failReason)
+    `INSERT INTO session (id, parent_session_id, owner, title, status, started_at, ended_at, cwd, model, recap, fail_reason, last_activity_summary)
+     VALUES (@id, @parentSessionId, @owner, @title, @status, @startedAt, @endedAt, @cwd, @model, @recap, @failReason, @lastActivitySummary)
      ON CONFLICT(id) DO UPDATE SET
        status = excluded.status,
        title = excluded.title,
        ended_at = excluded.ended_at,
        recap = excluded.recap,
-       fail_reason = excluded.fail_reason`
+       fail_reason = excluded.fail_reason,
+       last_activity_summary = excluded.last_activity_summary`
   ).run(session);
 }
 

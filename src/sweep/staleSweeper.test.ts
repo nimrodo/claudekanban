@@ -26,6 +26,7 @@ const baseSession: Session = {
   model: "claude-sonnet-5",
   recap: null,
   failReason: null,
+  lastActivitySummary: null,
 };
 
 describe("runStaleSweep", () => {

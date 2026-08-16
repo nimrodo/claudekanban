@@ -23,4 +23,7 @@ export function migrateSessionColumns(db: Database.Database): void {
   if (!columns.some((c) => c.name === "fail_reason")) {
     db.exec("ALTER TABLE session ADD COLUMN fail_reason TEXT");
   }
+  if (!columns.some((c) => c.name === "last_activity_summary")) {
+    db.exec("ALTER TABLE session ADD COLUMN last_activity_summary TEXT");
+  }
 }

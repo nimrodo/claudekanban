@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS session (
   model TEXT,
   recap TEXT,
   last_activity_at TEXT,
-  fail_reason TEXT
+  fail_reason TEXT,
+  last_activity_summary TEXT
 );
 
 CREATE TABLE IF NOT EXISTS event (

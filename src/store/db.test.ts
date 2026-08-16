@@ -22,12 +22,13 @@ function oldShapeDb(): Database.Database {
 }
 
 describe("migrateSessionColumns", () => {
-  it("retrofits last_activity_at and fail_reason onto a session table missing both", () => {
+  it("retrofits last_activity_at, fail_reason, and last_activity_summary onto a session table missing all three", () => {
     const db = oldShapeDb();
     migrateSessionColumns(db);
     const columns = (db.prepare("PRAGMA table_info(session)").all() as Array<{ name: string }>).map((c) => c.name);
     expect(columns).toContain("last_activity_at");
     expect(columns).toContain("fail_reason");
+    expect(columns).toContain("last_activity_summary");
   });
 
   it("is a no-op when both columns already exist", () => {

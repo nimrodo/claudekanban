@@ -52,6 +52,7 @@ describe("api routes", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: null,
     });
     const { baseUrl, close } = await startTestServer(db);
     const { status, body } = await getJson(`${baseUrl}/api/state`);
@@ -74,6 +75,7 @@ describe("api routes", () => {
       model: null,
       recap: null,
       failReason: null,
+      lastActivitySummary: null,
     });
     const { baseUrl, close } = await startTestServer(db);
     const { status, body } = await getJson(`${baseUrl}/api/state?since=3`);
@@ -96,6 +98,7 @@ describe("api routes", () => {
       model: null,
       recap: "done",
       failReason: null,
+      lastActivitySummary: null,
     });
     insertEvent(db, "sess-1", "2026-08-08T10:00:00.000Z", "SessionStart", {});
     const { baseUrl, close } = await startTestServer(db);
