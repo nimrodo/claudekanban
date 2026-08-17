@@ -1,6 +1,8 @@
 .worktrees/
 .claude/worktrees/
 .claude/settings.local.json
+.claude/skills/
+.agents/
 node_modules/
 spike/captures/*.jsonl
 !spike/captures/.gitkeep
