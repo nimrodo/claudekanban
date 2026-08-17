@@ -29,7 +29,7 @@ export function SessionCard({
       onClick={() => onSelect(session.id)}
       onKeyDown={(e) => handleActivateKey(e, () => onSelect(session.id))}
     >
-      <div className="card-cwd" title={session.cwd}>{cwdLabel(session.cwd)}</div>
+      <div className="card-cwd" title={session.cwd}>{session.title ?? cwdLabel(session.cwd)}</div>
       <div className="card-owner">{session.owner}</div>
       <div className="card-id">{session.id.slice(0, 8)}</div>
       <div className="card-status">{session.status}</div>
