@@ -40,22 +40,25 @@ reaffirmed this session — reasoning holds regardless of audience:
 
 ## Product Features (in order)
 
-### 1. Main-session title resolution
+### 1. Main-session title resolution — DONE
 
-**Why first:** cheap, and visible on *every* top-level session card today — currently
-falls back to raw `cwd` basename, which reads as unfinished in a screenshot. The
-unresolved gap is documented in
-`docs/superpowers/specs/2026-08-07-operations-console-design.md` (no `UserPromptSubmit`
-hook observed in this Claude Code version).
+**Shipped 2026-08-17.** Re-spiked live: `UserPromptSubmit` fires on Claude Code
+`2.1.233` and carries the prompt in a `prompt` field (the official docs claim
+`user_input`; the live payload disagreed — see `spike/findings.md` "UserPromptSubmit
+payload shape"). No transcript-parsing fallback was needed. `src/domain/mainTitle.ts`
+extracts the first line (untruncated); `src/ingest/ingest.ts` locks the title in once,
+from the first `UserPromptSubmit` per session; `SessionCard.tsx` prefers it over the
+`cwd` basename. Grilled via `superpowers:grilling` + `domain-modeling` before
+implementation — see `CONTEXT.md`'s **Title**/**Task** entries for the settled
+terminology and `docs/superpowers/specs/2026-08-07-operations-console-design.md` Open
+Question #7 for the resolved design record.
 
-**Work:** re-spike whether `UserPromptSubmit` fires in the currently installed Claude
-Code version (per this project's spike-first discipline — verify live, don't trust the
-prior finding as permanent); if still absent, fall back to parsing the session
-transcript file for the first user message.
+### 2a. Session current-activity indicator (repointed from "Task entity") — DONE
 
-**Effort:** low–medium (spike + one ingestion change).
-
-### 2a. Session current-activity indicator (repointed from "Task entity")
+**Shipped 2026-08-17** (verified against code: `src/domain/activitySummary.ts`'s
+`summarizeEvent`, `last_activity_summary` column in `src/store/schema.sql`, rendered on
+both session and subagent cards in `SessionCard.tsx`). Commits: `9697fb5`, `6cc9c97`,
+`89c44a0`, `c6529db`.
 
 **Status update (2026-08-16):** the originally planned `TodoWrite`-sourced task
 checklist was spiked and initially looked dead — no `TodoWrite` tool call ever fired,
