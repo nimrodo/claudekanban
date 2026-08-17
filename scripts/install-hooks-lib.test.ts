@@ -12,11 +12,11 @@ function resolvedDefs(commandFor: (scriptFile: string) => string = (f) => `/repo
 }
 
 describe("mergeHooks", () => {
-  it("adds all 7 events into empty settings", () => {
+  it("adds all 8 events into empty settings", () => {
     const { settings, added, alreadyPresent } = mergeHooks({}, resolvedDefs());
-    expect(added).toHaveLength(7);
+    expect(added).toHaveLength(8);
     expect(alreadyPresent).toHaveLength(0);
-    expect(Object.keys(settings.hooks!)).toHaveLength(7);
+    expect(Object.keys(settings.hooks!)).toHaveLength(8);
     expect(settings.hooks!.SessionStart).toEqual([
       { hooks: [{ type: "command", command: "/repo/hooks/on-session-start.sh" }] },
     ]);
@@ -32,7 +32,7 @@ describe("mergeHooks", () => {
     const first = mergeHooks({}, resolvedDefs());
     const second = mergeHooks(first.settings, resolvedDefs());
     expect(second.added).toHaveLength(0);
-    expect(second.alreadyPresent).toHaveLength(7);
+    expect(second.alreadyPresent).toHaveLength(8);
     expect(second.settings).toEqual(first.settings);
   });
 
@@ -81,7 +81,7 @@ describe("removeHooks", () => {
   it("removes only claudekanban's own entries and drops the event key when empty", () => {
     const installed = mergeHooks({}, resolvedDefs()).settings;
     const { settings, removed } = removeHooks(installed, resolvedDefs());
-    expect(removed).toHaveLength(7);
+    expect(removed).toHaveLength(8);
     expect(settings.hooks).toEqual({});
   });
 
