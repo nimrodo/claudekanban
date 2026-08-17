@@ -28,6 +28,7 @@ export interface ResolvedHookDef extends HookDef {
 /** The claudekanban hook events, in the order they should be written. */
 export const HOOK_DEFS: HookDef[] = [
   { event: "SessionStart", scriptFile: "on-session-start.sh" },
+  { event: "UserPromptSubmit", scriptFile: "on-user-prompt-submit.sh" },
   { event: "PostToolUse", scriptFile: "on-tool-use.sh", matcher: "*" },
   { event: "Stop", scriptFile: "on-stop.sh" },
   { event: "SubagentStart", scriptFile: "on-subagent-start.sh" },

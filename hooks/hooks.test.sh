@@ -30,7 +30,7 @@ for i in {1..50}; do
   sleep 0.1
 done
 
-for script in hooks/on-session-start.sh hooks/on-tool-use.sh hooks/on-stop.sh hooks/on-permission-request.sh hooks/on-notification.sh hooks/on-subagent-start.sh hooks/on-subagent-stop.sh; do
+for script in hooks/on-session-start.sh hooks/on-user-prompt-submit.sh hooks/on-tool-use.sh hooks/on-stop.sh hooks/on-permission-request.sh hooks/on-notification.sh hooks/on-subagent-start.sh hooks/on-subagent-stop.sh; do
   echo '{"hook_event_name":"SessionStart","session_id":"smoke-test"}' | "$script"
   if ! grep -q "smoke-test" "$TMP_LOG"; then
     echo "FAIL: $script did not forward payload"
