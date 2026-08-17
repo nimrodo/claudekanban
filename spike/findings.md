@@ -245,3 +245,191 @@ standing rule (see the `permission_prompt` caveat above).
   merged into the existing row by `agent_id` instead of creating a new row (current behavior).
   This resolves the "known UX gap" flagged in the Phase 1 plan's subagent-synthesis decision —
   subagent cards can now show a real `queued`/`running` frame instead of popping in already done.
+
+## TodoWrite payload shape (spiked for the Task-entity backlog item, 2026-08-16)
+
+Source capture: `spike/captures/todowrite.jsonl` (untracked/gitignored like other capture
+files — commit with `git add -f` if kept, per this doc's existing convention). Spiked against
+the currently installed Claude Code CLI (`2.1.233`), headless (`-p`) mode, using the standard
+listener/hook-script harness from Task 1–2 of the Phase 0 plan, wired via a scratch
+`--settings` file (not the user's real `~/.claude/settings.json`) rather than the manual
+merge-and-revert step the original plan used — same underlying mechanism, just non-interactive.
+
+- **Question asked:** does a live session emit `PostToolUse` events with `tool_name:
+  "TodoWrite"` (or equivalent) when explicitly instructed to track multi-step work via a todo
+  list, the way `docs/roadmap.md`'s "Task entity" backlog item and its spec
+  (`.scratch/session-task-checklist/spec.md`) assume?
+
+- **Test 1:** ran `claude -p` with a prompt explicitly instructing the session to create three
+  files one at a time and "use your todo list tool" to track pending/in_progress/completed for
+  each step, with `PostToolUse`/`Stop` hooks wired to the capture listener. Result: **no
+  `TodoWrite` (or any todo/task-tracking) tool call appears anywhere in the capture.** Only
+  `ToolSearch` (twice) and `Bash` (three times, one `touch` per file) fired as `PostToolUse`
+  events. The `ToolSearch` calls (record 0: query `"select:TodoWrite"`, 0 matches out of 105
+  deferred tools; record 1: query `"todo list task tracking"`, top matches were unrelated —
+  `CronList`, `TaskOutput`, `TaskStop`, various MCP list tools, no `TodoWrite`) show the model
+  actively looking for a todo-tracking tool and not finding one. It then fabricated a *textual*
+  todo list in its final `Stop.last_assistant_message` ("**Final todo list:** 1. [completed]
+  Create a.txt …") purely as prose, not as any tool call — nothing about that text reaches a
+  hook payload as structured data.
+
+- **Test 2 (direct confirmation):** asked the same session setup, in a fresh session, "Do you
+  have a tool named TodoWrite or any built-in task/todo tracking tool available to you right
+  now?" — response: *"No, I do not have a tool named TodoWrite — it's not in my available tool
+  list, and ToolSearch confirms no such deferred tool exists either."* Consistent with Test 1.
+
+- **Verdict for the Task-entity feature
+  (`docs/roadmap.md` item 2, `.scratch/session-task-checklist/spec.md`): the feature's core
+  data-source assumption does not hold in this installed environment.** There is no `TodoWrite`
+  tool call to capture via `PostToolUse` — not because the payload shape differs from
+  expectation (the original open question), but because **the tool itself is absent** from this
+  Claude Code installation's tool set, confirmed via `ToolSearch` returning zero matches out of
+  105 deferred tools and the model's own direct confirmation. This mirrors what this same
+  session observed independently in its own (non-spike) conversation: a `ToolSearch` for
+  `"select:TodoWrite,TaskCreate"` also returned no matches there.
+
+- **Retest in interactive mode (2026-08-16, same day):** the headless-only caveat above was
+  closed by re-running both tests in a real interactive session, driven via `tmux send-keys`/
+  `capture-pane` against `claude` (no `-p`) with the same scratch `--settings` hook wiring
+  (`spike/captures/todowrite-interactive.jsonl`). Same result: asked directly, the session
+  answered *"No — I don't have a TodoWrite or built-in task/todo tracking tool available."*;
+  given the same three-file, explicit-todo-tracking prompt as Test 1, it responded *"I don't
+  have a todo list tool available in this session, so I can't track these steps with one. I'll
+  create the files directly instead,"* then did so via three `Bash` `touch` calls — the capture
+  file confirms only `tool_name: "Bash"` fired (3 calls), no `TodoWrite`. **Confirmed absent in
+  both headless and interactive mode on this installation (Claude Code `2.1.233`).** Still not
+  proof it's absent from every Claude Code distribution/config/version — only this one, tested
+  two ways — but the headless-vs-interactive variable specifically is now ruled out as the
+  explanation.
+
+- **Retest against an older published version (2.1.204), same day:** installed
+  `@anthropic-ai/claude-code@2.1.204` fresh via `npm install` into a scratch directory (isolated
+  from the machine's global `claude` symlink, which points at `2.1.233`), ran its `install.cjs`
+  postinstall to fetch the native binary, and asked it the same direct question in headless mode.
+  Answer: **"No."** Same result as `2.1.233` in both modes above. **The CLI version is ruled out
+  as the explanation** — this isn't a recently-removed-feature regression between these two
+  releases.
+
+- **What could not be ruled out, and why:** every test above ran against this machine's real,
+  logged-in Claude Code account/config layer — `--settings <scratch-file>` *merges* additional
+  hooks on top of `~/.claude/settings.json`, it does not replace it, and that file wires in
+  several plugins (`superpowers`, `playwright`, `frontend-design`, etc.) and a third-party
+  "Boost" integration (`~/.claude/hooks/boost-hook-claude.sh`, referenced from
+  `~/.claude/settings.json`'s `PostToolUse`/`PreToolUse`/`Stop` hooks) alongside this project's
+  own `hooks/forward.sh`. This session's own tool set (`105 total_deferred_tools`, `ToolSearch`,
+  a long list of Gmail/Calendar/Drive/Trello/Playwright MCP tools) is clearly this
+  account-specific configuration, not a stock Claude Code tool set — so it remains an open
+  possibility that `TodoWrite` is present in a genuinely vanilla, unconfigured Claude Code
+  install and only absent *here* because of this account/plugin/Boost layer.
+  Two attempts to isolate that layer both hit a hard wall rather than a negative result:
+  `--bare` mode (which explicitly skips hooks and plugin sync) requires `ANTHROPIC_API_KEY`
+  authentication and refuses OAuth/keychain login — no API key is set in this environment: not
+  a decisive test, just an unavailable one. Overriding `$HOME` to an empty directory (to make
+  `~/.claude/settings.json` resolve to a non-existent, plugin-free path) also isolates the login
+  state itself, since Claude Code's auth is stored under `$HOME/.claude`, not the OS keychain
+  independently of it — the session came up logged out ("Not logged in · Please run /login")
+  rather than logged in and clean. Neither path was pursued further (would require either
+  supplying an API key or a fresh interactive login, both decisions for the project owner, not
+  something to do unilaterally).
+
+- **Correction, same day, after the user pointed at
+  `https://code.claude.com/docs/en/agent-sdk/todo-tracking`:** the account/Boost/plugin-layer
+  explanation above was speculation that turned out to be unnecessary — the docs give the real
+  answer, confirmed live below. **On Opus 4.8, Sonnet 5, Fable 5, Mythos 5, and later versions
+  of those families (which includes the model this entire investigation ran on), none of
+  `TodoWrite`, `TaskCreate`, `TaskGet`, `TaskUpdate`, `TaskList` are available by default at
+  all** — every test above ran without opting in, so absence was the documented, expected
+  behavior, nothing account-specific. The opt-in is `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` in the
+  session's environment (or naming a tool explicitly in `allowedTools`/`tools`).
+
+- **Live re-verification with the opt-in set:** reran the exact three-file/todo-tracking prompt
+  from Test 1, this time with `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` set in the subprocess
+  environment (`spike/captures/todowrite-optin.jsonl`). Result: **`TaskCreate`/`TaskUpdate`
+  fired for real** (not legacy `TodoWrite` — matches the docs' statement that Task tools are the
+  default once task-tracking is enabled at all, unless `CLAUDE_CODE_ENABLE_TASKS=0` is also set
+  to force the legacy tool). Confirmed live payload shapes:
+  - `TaskCreate.tool_input`: `{ subject: string, description: string, activeForm: string }` —
+    one call per new task (record 1: `{"subject":"Create a.txt","description":"Create empty
+    file a.txt in current directory","activeForm":"Creating a.txt"}`).
+  - `TaskUpdate.tool_input`: `{ taskId: string, status: "in_progress" | "completed" | ... }` —
+    one call per status change; `taskId` observed as a simple sequential string (`"1"`, `"2"`,
+    `"3"`), not a UUID, scoped to the session (matches the docs' note that the assigned ID
+    "comes back in the matching `tool_result`", not chosen by the model).
+  - Confirms the **delta model**, not a full-snapshot rewrite: 3× `TaskCreate` (one per file)
+    followed by 6× `TaskUpdate` (in_progress then completed, per file) — this directly resolves
+    the open question flagged in `.scratch/session-task-checklist/spec.md`'s "Out of Scope"
+    section about whether the payload would be delta- or snapshot-based. It's delta-based. A
+    `taskSynthesis.ts`-style module for this data source needs to accumulate/patch a per-task-id
+    map (per the docs' own "Migrate to Task tools" guidance), not replace a session's task list
+    wholesale on each call, as the original spec assumed for `TodoWrite`.
+
+- **Practical limitation this doesn't remove:** the tools are still opt-in, off by default, for
+  the exact model family in use. claudekanban's hooks passively observe real developer sessions
+  started independently in their own terminal (the whole reason CLI hooks were chosen over the
+  Agent SDK — see "Decision: Keep CLI hooks" above) — a typical developer session will not have
+  `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` set unless they've deliberately configured it, so in practice
+  this signal will be **absent for most real sessions**, not just theoretically possible to be
+  absent. Any feature built on this data source needs to degrade gracefully (render nothing) for
+  the common case where these tools never fire, the same way the current-activity indicator
+  spec (`.scratch/session-current-activity/spec.md`) already does for sessions with no events of
+  a given type.
+
+- **Implication:** the original `TodoWrite`-checklist premise was wrong about the *tool name and
+  payload model* (should have targeted `TaskCreate`/`TaskUpdate`, delta-based, not `TodoWrite`,
+  snapshot-based) but was **not wrong that the underlying capability exists** — it does, gated
+  behind an opt-in env var most real sessions won't set. This reopens whether
+  `.scratch/session-task-checklist/spec.md` should be revived (retargeted at Task tools) as a
+  progressive enhancement layered on top of the current-activity indicator, rather than staying
+  `wontfix` — a decision for the project owner, not resolved unilaterally here.
+
+## UserPromptSubmit payload shape (re-spiked for main-session title resolution, 2026-08-17)
+
+Source capture: `spike/captures/user-prompt-submit.jsonl` (untracked/gitignored like other
+capture files). Spiked against the currently installed Claude Code CLI (`2.1.233`), headless
+(`-p`) mode, using the same scratch-`--settings` harness as the `TodoWrite` re-spike above
+(temporary hook script at `spike/hooks/user-prompt-submit.sh`, forwarding to the standard
+listener on `127.0.0.1:8787`).
+
+- **Question asked:** does `UserPromptSubmit` fire on this installed CLI version, and if so,
+  what field carries the user's prompt text? This directly **supersedes** the original Phase 0
+  finding above ("Hook events and payload fields") that "no ... `UserPromptSubmit` events
+  appear anywhere in this capture" — that finding was never pinned to a CLI version or tested
+  as a targeted question, only observed as absent from an unrelated general capture, so per
+  this doc's own re-test discipline (see the `SubagentStart`/`SubagentStop` and `TodoWrite`
+  sections above) it needed live re-verification before being trusted as still true.
+
+- **Test 1 (single-line prompt):** ran `claude -p "Fix the login bug in the auth module"` with
+  only a `UserPromptSubmit` hook wired via scratch settings. Result: **the event fires.**
+  Captured payload:
+  ```json
+  {
+    "session_id": "80534d53-d0b6-43cd-bd1f-7ec2e64eb793",
+    "transcript_path": "/Users/nimrodo/.claude/projects/-Users-nimrodo-workspace-claudekanban/80534d53-d0b6-43cd-bd1f-7ec2e64eb793.jsonl",
+    "cwd": "/Users/nimrodo/workspace/claudekanban",
+    "prompt_id": "2a597fb2-828a-4827-874e-e62c129ee064",
+    "permission_mode": "default",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Fix the login bug in the auth module"
+  }
+  ```
+
+- **Test 2 (multiline prompt):** ran `claude -p` with a prompt containing `\n\n` and a `- `
+  bullet line, same hook wiring. Result: the prompt text arrives with raw `\n` characters
+  inside the JSON string value, not split into multiple events or otherwise encoded:
+  ```json
+  "prompt": "Fix the login bug\n\nHere is more context about the issue:\n- it fails on line 42"
+  ```
+
+- **Verdict — docs disagreed with the live payload on the field name.** The official hooks
+  docs (`https://code.claude.com/docs/en/hooks`, fetched the same day) describe this event's
+  prompt-text field as **`user_input`**. The live capture shows the actual field is **`prompt`**
+  — `user_input` does not appear anywhere in the payload. This is exactly the scenario this
+  project's spike-first discipline exists to catch: the docs were wrong (or describe a
+  different/future version) for this specific field name, even though everything else about
+  the event (name, firing behavior, other fields — `session_id`, `transcript_path`, `cwd`,
+  `prompt_id`, `permission_mode`) matched the docs. **Any implementation must read
+  `payload.prompt`, not `payload.user_input`.**
+
+- **Practical implication for main-session title resolution:** `UserPromptSubmit` is confirmed
+  live and usable — no transcript-file-parsing fallback is needed. `payload.prompt` carries the
+  raw first-line-extractable prompt text directly, newlines intact for first-line splitting.
