@@ -356,6 +356,42 @@ describe("createIngestHandler", () => {
     expect(child?.title).toBe("Find TODO occurrences");
   });
 
+  it("sets title from the first UserPromptSubmit event's prompt", () => {
+    const db = testDb();
+    const handler = createIngestHandler(db);
+    handler(
+      { body: { hook_event_name: "SessionStart", session_id: "sess-1", cwd: "/tmp" } } as Request,
+      fakeRes()
+    );
+    handler(
+      {
+        body: {
+          hook_event_name: "UserPromptSubmit",
+          session_id: "sess-1",
+          prompt: "Fix the login bug\n\nHere is more context",
+        },
+      } as Request,
+      fakeRes()
+    );
+    const session = getSession(db, "sess-1");
+    expect(session?.title).toBe("Fix the login bug");
+  });
+
+  it("does not overwrite an existing title on a second UserPromptSubmit", () => {
+    const db = testDb();
+    const handler = createIngestHandler(db);
+    handler(
+      { body: { hook_event_name: "UserPromptSubmit", session_id: "sess-1", prompt: "First prompt" } } as Request,
+      fakeRes()
+    );
+    handler(
+      { body: { hook_event_name: "UserPromptSubmit", session_id: "sess-1", prompt: "Second prompt" } } as Request,
+      fakeRes()
+    );
+    const session = getSession(db, "sess-1");
+    expect(session?.title).toBe("First prompt");
+  });
+
   it("emits session-changed on changeEmitter for every write", () => {
     const db = testDb();
     const handler = createIngestHandler(db);
