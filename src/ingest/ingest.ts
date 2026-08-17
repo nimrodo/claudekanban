@@ -5,6 +5,7 @@ import { getSession, type Session } from "../store/sessionStore.js";
 import { applySessionChange } from "../store/applyChange.js";
 import { deriveStatus, type HookPayload } from "../domain/stateMachine.js";
 import { summarizeEvent } from "../domain/activitySummary.js";
+import { deriveMainTitle } from "../domain/mainTitle.js";
 import {
   synthesizeSubagentSession,
   synthesizeSubagentStart,
@@ -32,7 +33,9 @@ export function createIngestHandler(db: Database.Database) {
       id: payload.session_id,
       parentSessionId: existing?.parentSessionId ?? null,
       owner: existing?.owner ?? "main",
-      title: existing?.title ?? null,
+      title:
+        existing?.title ??
+        (payload.hook_event_name === "UserPromptSubmit" ? deriveMainTitle(payload.prompt) : null),
       status,
       startedAt: existing?.startedAt ?? receivedAt,
       endedAt: status === "done" || status === "failed" ? receivedAt : null,

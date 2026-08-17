@@ -10,6 +10,10 @@ export interface HookPayload {
   tool_response?: { agentId?: string; error?: unknown; [key: string]: unknown };
   last_assistant_message?: string;
   notification_type?: string;
+  // UserPromptSubmit's prompt-text field. Named `prompt`, confirmed via a live re-spike
+  // (spike/findings.md, "UserPromptSubmit payload shape") — the official docs claim
+  // `user_input`, but the live payload does not have that field.
+  prompt?: string;
   // Unconfirmed: no capture in spike/findings.md's "Stop payload / recap" section has ever
   // shown an error/failure field on a Stop event. Named ahead of a live capture so only this
   // field needs updating once one is confirmed; until then stopFailed() is always false.
