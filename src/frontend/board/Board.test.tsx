@@ -288,7 +288,13 @@ describe("Board", () => {
   });
 
   describe("overflow cap", () => {
-    it("caps a lane's done cell with 8 done sessions at 5 cards plus a +3 more button", () => {
+    // Per-cell cap/expand mechanics (5-item cap, "+N more", "show less", failed never capped)
+    // are already exhaustively covered by LaneCell.test.tsx. Board.test.tsx keeps one light
+    // smoke test to confirm the cap is actually wired end-to-end through Board -> LaneRow ->
+    // LaneCell, and focuses its real coverage on the integration surface LaneCell cannot see
+    // on its own: Board tracks each (lane, status) cell's expanded state independently, keyed
+    // by `${cwd}:${status}` in expandedCells.
+    it("caps a lane's done cell with 8 done sessions at 5 cards plus a +3 more button (smoke test)", () => {
       window.localStorage.setItem("ck.swimlanes.collapsed", JSON.stringify({ "/home/user/app-one": false }));
       const sessions = Array.from({ length: 8 }, (_, i) =>
         session({
@@ -308,9 +314,55 @@ describe("Board", () => {
       expect(within(cell).getByText("+3 more")).toBeInTheDocument();
     });
 
-    it("clicking the overflow button shows all 8 and swaps the label to show less", () => {
+    it("tracks each lane's done cell's expanded state independently — expanding lane A's overflow does not affect lane B's", () => {
+      window.localStorage.setItem(
+        "ck.swimlanes.collapsed",
+        JSON.stringify({ "/home/user/app-one": false, "/home/user/app-two": false })
+      );
+      const laneASessions = Array.from({ length: 8 }, (_, i) =>
+        session({
+          id: `a-d${i}`,
+          cwd: "/home/user/app-one",
+          status: "done",
+          title: `A-Done ${i}`,
+          endedAt: `2026-08-08T10:0${i}:00.000Z`,
+        })
+      );
+      const laneBSessions = Array.from({ length: 8 }, (_, i) =>
+        session({
+          id: `b-d${i}`,
+          cwd: "/home/user/app-two",
+          status: "done",
+          title: `B-Done ${i}`,
+          endedAt: `2026-08-08T10:0${i}:00.000Z`,
+        })
+      );
+      const { container } = render(
+        <Board
+          sessions={[...laneASessions, ...laneBSessions]}
+          selectedId={null}
+          onSelect={() => {}}
+          now={NOW}
+        />
+      );
+      const rowA = laneRowFor(container, "/home/user/app-one");
+      const rowB = laneRowFor(container, "/home/user/app-two");
+      const cellA = rowA.querySelector('.lane-cell[data-status="done"]') as HTMLElement;
+      const cellB = rowB.querySelector('.lane-cell[data-status="done"]') as HTMLElement;
+
+      // Expand only lane A's done cell.
+      fireEvent.click(within(cellA).getByText("+3 more"));
+
+      expect(cellA.querySelectorAll(".lane-card")).toHaveLength(8);
+      expect(within(cellA).getByText("show less")).toBeInTheDocument();
+      // Lane B's done cell remains capped and untouched.
+      expect(cellB.querySelectorAll(".lane-card")).toHaveLength(5);
+      expect(within(cellB).getByText("+3 more")).toBeInTheDocument();
+    });
+
+    it("tracks a lane's done and failed cells' expanded state independently within the same lane", () => {
       window.localStorage.setItem("ck.swimlanes.collapsed", JSON.stringify({ "/home/user/app-one": false }));
-      const sessions = Array.from({ length: 8 }, (_, i) =>
+      const doneSessions = Array.from({ length: 8 }, (_, i) =>
         session({
           id: `d${i}`,
           cwd: "/home/user/app-one",
@@ -319,17 +371,41 @@ describe("Board", () => {
           endedAt: `2026-08-08T10:0${i}:00.000Z`,
         })
       );
+      // Failed is never capped, but expandedCells still tracks a key for it; use waiting-status
+      // overflow instead of failed since failed never renders a toggle to click. We reuse
+      // "done" for the expanded cell and "queued" (also cappable) as the untouched sibling
+      // within the same lane.
+      const queuedSessions = Array.from({ length: 7 }, (_, i) =>
+        session({
+          id: `q${i}`,
+          cwd: "/home/user/app-one",
+          status: "queued",
+          title: `Queued ${i}`,
+          startedAt: `2026-08-08T09:0${i}:00.000Z`,
+        })
+      );
       const { container } = render(
-        <Board sessions={sessions} selectedId={null} onSelect={() => {}} now={NOW} />
+        <Board
+          sessions={[...doneSessions, ...queuedSessions]}
+          selectedId={null}
+          onSelect={() => {}}
+          now={NOW}
+        />
       );
       const row = laneRowFor(container, "/home/user/app-one");
-      const cell = row.querySelector('.lane-cell[data-status="done"]') as HTMLElement;
-      fireEvent.click(within(cell).getByText("+3 more"));
-      expect(cell.querySelectorAll(".lane-card")).toHaveLength(8);
-      expect(within(cell).getByText("show less")).toBeInTheDocument();
+      const doneCell = row.querySelector('.lane-cell[data-status="done"]') as HTMLElement;
+      const queuedCell = row.querySelector('.lane-cell[data-status="queued"]') as HTMLElement;
+
+      fireEvent.click(within(doneCell).getByText("+3 more"));
+
+      expect(doneCell.querySelectorAll(".lane-card")).toHaveLength(8);
+      expect(within(doneCell).getByText("show less")).toBeInTheDocument();
+      // The queued cell in the SAME lane remains capped and untouched.
+      expect(queuedCell.querySelectorAll(".lane-card")).toHaveLength(5);
+      expect(within(queuedCell).getByText("+2 more")).toBeInTheDocument();
     });
 
-    it("shows all 7 failed sessions with no cap button, regardless of count", () => {
+    it("shows all 7 failed sessions with no cap button, regardless of count (smoke test)", () => {
       window.localStorage.setItem("ck.swimlanes.collapsed", JSON.stringify({ "/home/user/app-one": false }));
       const sessions = Array.from({ length: 7 }, (_, i) =>
         session({
@@ -470,20 +546,28 @@ describe("Board", () => {
     });
 
     it("reflects expanded state seeded in localStorage overriding auto-collapse", () => {
+      // Seed an override only for app-one; app-two is an identically-shaped done-only lane
+      // left unseeded, so it auto-collapses normally. That gives the seeded lane a real
+      // contrast to prove against: without the override winning over isHistoryOnly, both
+      // lanes would collapse identically and this test couldn't tell the difference.
       window.localStorage.setItem("ck.swimlanes.collapsed", JSON.stringify({ "/home/user/app-one": false }));
       const { container } = render(
         <Board
           sessions={[
             session({ id: "a", cwd: "/home/user/app-one", status: "done", endedAt: "2026-08-08T10:01:00.000Z" }),
+            session({ id: "b", cwd: "/home/user/app-two", status: "done", endedAt: "2026-08-08T10:01:00.000Z" }),
           ]}
           selectedId={null}
           onSelect={() => {}}
           now={NOW}
         />
       );
-      const row = laneRowFor(container, "/home/user/app-one");
-      // Would normally auto-collapse (done-only), but stored state forces expanded.
-      expect(row).toHaveAttribute("data-collapsed", "false");
+      const seededRow = laneRowFor(container, "/home/user/app-one");
+      const unseededRow = laneRowFor(container, "/home/user/app-two");
+      // Unseeded sibling of the same done-only shape auto-collapses (the real default).
+      expect(unseededRow).toHaveAttribute("data-collapsed", "true");
+      // Seeded lane overrides that default and stays expanded.
+      expect(seededRow).toHaveAttribute("data-collapsed", "false");
     });
   });
 
