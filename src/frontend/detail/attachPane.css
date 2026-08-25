@@ -393,18 +393,9 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .subagent-progress-fill {
+    /* ck-creep is now defined canonically in board.css; both stylesheets load
+       together on any page that renders Board + AttachPane as siblings. */
     animation: ck-creep 1.6s ease-in-out infinite;
-  }
-}
-
-/* TEMPORARY: canonical ck-creep keyframe is defined in board.css by a later task.
-   Reconcile then — do not let both declarations exist once board.css defines its own. */
-@keyframes ck-creep {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(250%);
   }
 }
 
