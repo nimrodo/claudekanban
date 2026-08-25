@@ -217,9 +217,6 @@ body {
 .fleet-bar-counter-dot[data-status="failed"] {
   background: var(--ck-failed);
 }
-.status-dot[data-status="running"] {
-  background: var(--ck-running);
-}
 
 .fleet-bar-counter-count {
   font-weight: 600;
@@ -437,7 +434,8 @@ body {
 .lane-collapsed-dot[data-status="running"] {
   background: var(--ck-running);
 }
-.lane-status-pill[data-status="running"] {
+.lane-status-pill[data-status="running"],
+.lane-collapsed-pill[data-status="running"] {
   color: var(--ck-running);
 }
 .lane-collapsed-dot[data-status="waiting"] {
@@ -715,8 +713,9 @@ body {
 /* ---------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: no-preference) {
-  .fleet-bar .status-dot[data-status="running"],
-  .lane-status-pill[data-status="running"] {
+  .fleet-bar-counter-dot[data-status="running"],
+  .lane-status-pill[data-status="running"],
+  .lane-collapsed-pill[data-status="running"] {
     animation: ck-pulse-dot 1.5s ease-in-out infinite;
   }
   .subagent-progress-fill {
