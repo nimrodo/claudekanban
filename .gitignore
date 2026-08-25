@@ -9,3 +9,4 @@ spike/captures/*.jsonl
 dist/
 *.db
 *.db-journal
+docs/handoffs/**
