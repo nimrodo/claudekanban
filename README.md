@@ -4,6 +4,22 @@ A real-time kanban-style console for observing Claude Code sessions. Claude
 Code hooks forward hook payloads to a local Express backend, which persists
 them to SQLite and pushes live updates to a React board over SSE.
 
+## Screenshots
+
+**Board** — one swimlane per project, crossed with status columns
+(`queued`/`running`/`waiting`/`done`/`failed`). A `FleetBar` strip up top
+shows live counts across every project. Running cards show a title, elapsed
+timer, and chips for any subagents they've spawned.
+
+![Board view with swimlanes per project and a running card showing spawned subagent chips](docs/images/board-overview.png)
+
+**Detail view** — click any card to open its timeline: every hook event for
+that session, with subagent spawns nested under the `Task` call that started
+them, live progress bars for subagents still running, and a raw-JSON toggle
+per entry.
+
+![Detail panel showing a session's event timeline with nested subagent rows](docs/images/attach-pane.png)
+
 ## How it works
 
 ```
@@ -11,6 +27,25 @@ Claude Code hook event → hooks/on-*.sh (curl POST to /ingest)
   → backend ingest/domain synthesis → SQLite
   → SSE broadcast → React board (live update)
 ```
+
+## Example: watch a session end to end
+
+1. Install the hooks (see [Setup](#setup) below), then start the backend and
+   frontend.
+2. Start a normal Claude Code session in any project. The moment its
+   `SessionStart` hook fires, a card appears in that project's swimlane under
+   `running`, with a live elapsed timer.
+3. If that session spawns a subagent (e.g. via the `Task` tool), a small chip
+   for it appears on the parent's card — click the chip to jump straight to
+   the subagent's own row in the parent's timeline.
+4. If Claude Code stops to ask for a permission decision, the card moves to
+   `waiting` with a "blocked" timer, so it's visible at a glance which
+   sessions need a human.
+5. When the session ends, the card moves to `done` (with a one-line recap) or
+   `failed` (with the failure reason) — no polling, no refresh, pushed over
+   SSE the instant the `Stop` hook fires.
+6. Click the card at any point to open the detail panel and see the full
+   event timeline behind that summary.
 
 ## Setup
 
@@ -27,11 +62,13 @@ backend:
 ```bash
 npm run hooks:install            # prompts for user-level vs. project-level
 npm run hooks:install -- --user  # or --project, non-interactively
+npm run hooks:install -- --path <file>  # target a specific settings.json
 npm run hooks:install -- --dry-run   # preview without writing
 npm run hooks:install -- --remove    # cleanly uninstall
+npm run hooks:install -- --yes       # skip the confirm prompt (needed if stdin isn't a TTY)
 ```
 
-This merges the 7 claudekanban hook entries into the target `settings.json`
+This merges the 8 claudekanban hook entries into the target `settings.json`
 without touching any other hooks already registered there, backing up the
 file to `settings.json.bak` before writing.
 
@@ -52,10 +89,13 @@ file to `settings.json.bak` before writing.
 
 Sessions and their subagents are tracked in a single SQLite table with two
 lifecycles (top-level session vs. nested subagent), synthesized from hook
-payloads by pure domain functions and pushed to the frontend over SSE. See
-[`CLAUDE.md`](./CLAUDE.md) for the full data-flow and domain-model
-breakdown, and `docs/superpowers/specs/2026-08-07-operations-console-design.md`
-for the living design spec.
+payloads by pure domain functions and pushed to the frontend over SSE. The
+board groups sessions into a swimlane per project (`cwd`) crossed with
+status columns; clicking a card opens its detail panel (`AttachPane`), built
+from the same raw events as the board summary. See [`CLAUDE.md`](./CLAUDE.md)
+for the full data-flow and domain-model breakdown, and
+`docs/superpowers/specs/2026-08-07-operations-console-design.md` for the
+living design spec.
 
 ## Status
 
