@@ -27,7 +27,12 @@ function App() {
 
   return (
     <div className="app-grid" data-pane-open={selectedId !== null}>
-      <Board sessions={sessions} selectedId={selectedId} onSelect={setSelectedId} now={now} />
+      <Board
+        sessions={sessions}
+        selectedId={selectedId}
+        onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+        now={now}
+      />
       {selectedId !== null && (
         <AttachPane
           detail={detail}

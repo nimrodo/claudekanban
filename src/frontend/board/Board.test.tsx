@@ -110,7 +110,7 @@ describe("Board", () => {
   });
 
   describe("card status rendering", () => {
-    it("renders a running card in the running column with title falling back to cwd label and an activity line", () => {
+    it("renders a running card in the running column with title falling back to cwdLabel(cwd) and an activity line", () => {
       const { container } = render(
         <Board
           sessions={[
@@ -131,7 +131,7 @@ describe("Board", () => {
       const cell = row.querySelector('.lane-cell[data-status="running"]') as HTMLElement;
       const card = cell.querySelector(".lane-card") as HTMLElement;
       expect(card).toBeTruthy();
-      expect(within(card).getByText("/home/user/app-one")).toBeInTheDocument();
+      expect(within(card).getByText("app-one")).toBeInTheDocument();
       expect(within(card).getByText("Reading files")).toBeInTheDocument();
     });
 

@@ -325,6 +325,21 @@ body {
   background: var(--ck-failed);
 }
 
+/* queued intentionally stays muted (default color) — --ck-queued is too
+   low-contrast for text at this size. */
+.lane-header-cell[data-status="running"] {
+  color: var(--ck-running);
+}
+.lane-header-cell[data-status="waiting"] {
+  color: var(--ck-waiting);
+}
+.lane-header-cell[data-status="done"] {
+  color: var(--ck-done);
+}
+.lane-header-cell[data-status="failed"] {
+  color: var(--ck-failed);
+}
+
 .lane-stack {
   flex: 1;
   overflow-y: auto;
@@ -564,7 +579,8 @@ body {
 }
 
 .lane-card[data-selected="true"] {
-  border-color: var(--ck-running);
+  border-color: var(--ck-text-faint);
+  box-shadow: inset 0 0 0 1px #2f3542;
 }
 
 .lane-card-title {
@@ -601,9 +617,11 @@ body {
   font-family: var(--ck-font-mono);
   font-size: 0.68rem;
   color: var(--ck-failed);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .lane-card-footer {

@@ -111,7 +111,7 @@ describe("Card", () => {
     expect(screen.getByText("Command exited with code 1")).toBeInTheDocument();
   });
 
-  it("falls back to cwd when title is null", () => {
+  it("falls back to cwdLabel(cwd) when title is null", () => {
     render(
       <Card
         session={session({ title: null, cwd: "/home/user/app" })}
@@ -121,7 +121,7 @@ describe("Card", () => {
         onSelect={() => {}}
       />
     );
-    expect(screen.getByText("/home/user/app")).toBeInTheDocument();
+    expect(screen.getByText("app")).toBeInTheDocument();
   });
 
   it("sets data-status and data-selected on the card root", () => {

@@ -65,7 +65,7 @@ export function Board({
         <div className="lane-header-cell">PROJECT</div>
         {STATUSES.map((status) => (
           <div key={status} className="lane-header-cell" data-status={status}>
-            {status}
+            {status} {counts[status]}
           </div>
         ))}
       </div>

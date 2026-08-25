@@ -2,6 +2,7 @@ import type { JSX, KeyboardEvent } from "react";
 import type { SessionDto } from "../lib/transport/Transport.js";
 import { formatElapsed } from "./formatElapsed.js";
 import { SubagentChips } from "./SubagentChips.js";
+import { cwdLabel } from "./laneOrder.js";
 
 export function handleActivateKey(e: KeyboardEvent, onActivate: () => void) {
   if (e.key === "Enter" || e.key === " ") {
@@ -44,11 +45,13 @@ function renderBody(
   onSelect: (id: string) => void,
   queuePosition: number | undefined
 ): JSX.Element {
+  const displayTitle = session.title ?? cwdLabel(session.cwd);
+
   switch (session.status) {
     case "running":
       return (
         <>
-          <div className="lane-card-title">{session.title ?? session.cwd}</div>
+          <div className="lane-card-title">{displayTitle}</div>
           {session.lastActivitySummary && (
             <div className="lane-card-activity" title={session.lastActivitySummary}>
               {session.lastActivitySummary}
@@ -64,7 +67,7 @@ function renderBody(
     case "waiting":
       return (
         <>
-          <div className="lane-card-title">{session.title ?? session.cwd}</div>
+          <div className="lane-card-title">{displayTitle}</div>
           {session.lastActivitySummary && (
             <div className="lane-card-activity" title={session.lastActivitySummary}>
               {session.lastActivitySummary}
@@ -86,7 +89,7 @@ function renderBody(
     case "queued":
       return (
         <>
-          <div className="lane-card-title">{session.title ?? session.cwd}</div>
+          <div className="lane-card-title">{displayTitle}</div>
           <div className="lane-card-meta">
             #{queuePosition ?? 1} · queued {formatElapsed(now - new Date(session.startedAt).getTime())}
           </div>
@@ -97,7 +100,7 @@ function renderBody(
       const startedAtMs = new Date(session.startedAt).getTime();
       return (
         <>
-          <div className="lane-card-title">{session.title ?? session.cwd}</div>
+          <div className="lane-card-title">{displayTitle}</div>
           <div className="lane-card-meta">{formatElapsed(endedAtMs - startedAtMs)}</div>
         </>
       );
@@ -105,7 +108,7 @@ function renderBody(
     case "failed":
       return (
         <>
-          <div className="lane-card-title">{session.title ?? session.cwd}</div>
+          <div className="lane-card-title">{displayTitle}</div>
           {session.failReason && <div className="lane-card-fail-reason">{session.failReason}</div>}
         </>
       );
