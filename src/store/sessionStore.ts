@@ -19,6 +19,7 @@ interface SessionRow {
   recap: string | null;
   fail_reason: string | null;
   last_activity_summary: string | null;
+  last_activity_at: string | null;
 }
 
 function rowToSession(row: SessionRow): Session {
@@ -35,6 +36,7 @@ function rowToSession(row: SessionRow): Session {
     recap: row.recap,
     failReason: row.fail_reason,
     lastActivitySummary: row.last_activity_summary,
+    lastActivityAt: row.last_activity_at,
   };
 }
 

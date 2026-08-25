@@ -34,6 +34,7 @@ export function synthesizeSubagentSession(payload: PostToolUsePayload, receivedA
     recap: null,
     failReason: failed ? errorToReason(error) : null,
     lastActivitySummary: summarizeEvent(payload.hook_event_name, payload),
+    lastActivityAt: null,
   };
 }
 
@@ -61,6 +62,7 @@ export function synthesizeSubagentStart(existing: Session | undefined, payload: 
     recap: null,
     failReason: null,
     lastActivitySummary: summarizeEvent(payload.hook_event_name, payload),
+    lastActivityAt: null,
   };
 }
 

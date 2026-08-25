@@ -46,6 +46,7 @@ describe("synthesizeSubagentSession", () => {
       recap: null,
       failReason: null,
       lastActivitySummary: "Spawned Explore subagent",
+      lastActivityAt: null,
     });
   });
 
@@ -124,6 +125,7 @@ describe("synthesizeSubagentStart", () => {
       recap: null,
       failReason: null,
       lastActivitySummary: "Running Explore subagent",
+      lastActivityAt: null,
     });
   });
 
