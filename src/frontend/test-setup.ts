@@ -1,8 +1,8 @@
-import { afterEach, beforeEach } from "vitest";
+import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
-// Polyfill localStorage for jsdom tests that need it
+// Polyfill localStorage for tests that need it
 if (typeof window !== "undefined" && !window.localStorage) {
   const store: Record<string, string> = {};
   window.localStorage = {
