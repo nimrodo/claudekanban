@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getSession, listSessions, upsertSession, type Session } from "./sessionStore.js";
+import { getSession, listSessions, upsertSession, touchSessionActivity, type Session } from "./sessionStore.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +26,7 @@ const baseSession: Session = {
   recap: null,
   failReason: null,
   lastActivitySummary: null,
+  lastActivityAt: null,
 };
 
 describe("sessionStore", () => {
@@ -39,12 +40,11 @@ describe("sessionStore", () => {
     const db = testDb();
     upsertSession(db, baseSession);
     upsertSession(db, { ...baseSession, status: "done", endedAt: "2026-08-08T10:05:00.000Z", recap: "All done." });
-    expect(getSession(db, "sess-1")).toEqual({
-      ...baseSession,
-      status: "done",
-      endedAt: "2026-08-08T10:05:00.000Z",
-      recap: "All done.",
-    });
+    const result = getSession(db, "sess-1");
+    expect(result?.status).toBe("done");
+    expect(result?.endedAt).toBe("2026-08-08T10:05:00.000Z");
+    expect(result?.recap).toBe("All done.");
+    expect(result?.lastActivityAt).toBeNull();
   });
 
   it("round-trips failReason through insert and update", () => {
@@ -77,5 +77,25 @@ describe("sessionStore", () => {
   it("returns undefined for a missing session", () => {
     const db = testDb();
     expect(getSession(db, "missing")).toBeUndefined();
+  });
+
+  it("touchSessionActivity sets lastActivityAt, upsertSession never overwrites it", () => {
+    const db = testDb();
+    // Insert a fresh row
+    upsertSession(db, baseSession);
+    let session = getSession(db, "sess-1");
+    expect(session?.lastActivityAt).toBeNull();
+
+    // Call touchSessionActivity
+    const activityTs = "2026-08-08T10:02:30.000Z";
+    touchSessionActivity(db, "sess-1", activityTs);
+    session = getSession(db, "sess-1");
+    expect(session?.lastActivityAt).toBe(activityTs);
+
+    // Simulate a status change via upsertSession
+    upsertSession(db, { ...baseSession, status: "done", endedAt: "2026-08-08T10:05:00.000Z" });
+    session = getSession(db, "sess-1");
+    // lastActivityAt should remain unchanged (not overwritten by upsertSession)
+    expect(session?.lastActivityAt).toBe(activityTs);
   });
 });

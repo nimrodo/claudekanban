@@ -29,6 +29,7 @@ const session: Session = {
   recap: null,
   failReason: null,
   lastActivitySummary: null,
+  lastActivityAt: null,
 };
 
 describe("applySessionChange", () => {
@@ -43,7 +44,7 @@ describe("applySessionChange", () => {
 
     applySessionChange(db, session, "2026-08-12T10:05:00.000Z", 42);
 
-    expect(getSession(db, "sess-1")).toEqual(session);
+    expect(getSession(db, "sess-1")).toEqual({ ...session, lastActivityAt: "2026-08-12T10:05:00.000Z" });
     expect(listRunningSessionActivity(db)).toEqual([
       { id: "sess-1", status: "running", lastActivityAt: "2026-08-12T10:05:00.000Z" },
     ]);
@@ -60,6 +61,8 @@ describe("applySessionChange", () => {
 
     applySessionChange(db, session, "2026-08-12T10:05:00.000Z");
 
+    // Note: the emitted session is the one passed in (before touching activity),
+    // which has lastActivityAt: null
     expect(seen).toEqual([{ session, eventId: undefined }]);
   });
 });

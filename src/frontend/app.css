@@ -1,0 +1,15 @@
+/*
+ * App shell layout — the two-pane grid that splits the board area from the
+ * attach pane. Kept separate from board.css since this is app-shell-level
+ * (owns the top-level #root layout), not board-internal.
+ */
+
+.app-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100vh;
+}
+
+.app-grid[data-pane-open="true"] {
+  grid-template-columns: 1fr 470px;
+}
