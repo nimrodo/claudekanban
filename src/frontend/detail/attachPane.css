@@ -397,6 +397,8 @@
   }
 }
 
+/* TEMPORARY: canonical ck-creep keyframe is defined in board.css by a later task.
+   Reconcile then — do not let both declarations exist once board.css defines its own. */
 @keyframes ck-creep {
   0% {
     transform: translateX(-100%);

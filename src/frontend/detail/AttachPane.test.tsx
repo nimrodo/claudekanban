@@ -169,7 +169,7 @@ describe("AttachPane", () => {
     expect(screen.queryByText(/branch/i)).not.toBeInTheDocument();
   });
 
-  it("renders a grouped 'Task · n subagents' list, not n separate flat entries, for a spawn entry with matching live children", () => {
+  it("renders one subagent row per live child under a single 'Task · n subagents' header", () => {
     const spawnEvents: EventDto[] = [
       { id: 1, sessionId: "sess-1", ts: "2026-08-08T10:00:00.000Z", type: "SessionStart", payload: "{}" },
       {
