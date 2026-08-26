@@ -3,10 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./dist-extension/extension/extension.js",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudekanban.openBoard",
+        "title": "ClaudeKanban: Open Board"
+      },
+      {
+        "command": "claudekanban.installHooks",
+        "title": "ClaudeKanban: Install Hooks"
+      }
+    ],
+    "configuration": {
+      "title": "ClaudeKanban",
+      "properties": {
+        "claudekanban.dbPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the SQLite database file for the Managed server. Defaults to a workspace-scoped path under the extension's own storage. Set this to a Standalone server's claudekanban.db path to share history across both modes."
+        }
+      }
+    }
+  },
   "scripts": {
     "dev:server": "tsx watch src/server.ts",
     "dev:frontend": "vite",
     "build": "tsc -p tsconfig.json && vite build",
+    "build:server": "tsc -p tsconfig.server.json && node scripts/copy-server-assets.js",
+    "build:extension": "tsc -p extension/tsconfig.json",
+    "package:extension": "npm run build && npm run build:server && npm run build:extension",
     "test": "vitest run",
     "test:watch": "vitest",
     "hooks:install": "tsx scripts/install-hooks.ts"
@@ -25,6 +54,7 @@
     "@types/node": "^22.7.5",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
+    "@types/vscode": "^1.100.0",
     "@vitejs/plugin-react": "^4.3.2",
     "jsdom": "^25.0.1",
     "tsx": "^4.19.1",
