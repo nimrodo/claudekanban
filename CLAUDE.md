@@ -42,7 +42,7 @@ Feature work follows brainstorm → spec → grilling → plan → subagent-driv
 
 ### Issue tracker
 
-Issues live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+Issues live as GitHub issues on `nimrodo/claudekanban`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

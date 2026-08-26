@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["vscode", "node"],
+    "outDir": "../dist-extension",
+    "rootDir": ".."
+  },
+  "include": ["./**/*.ts", "../scripts/install-hooks-lib.ts"],
+  "exclude": ["**/*.test.ts"]
+}

@@ -72,6 +72,29 @@ This merges the 8 claudekanban hook entries into the target `settings.json`
 without touching any other hooks already registered there, backing up the
 file to `settings.json.bak` before writing.
 
+## VSCode extension
+
+As an alternative to running `dev:server`/`dev:frontend` by hand, the board
+can run inside VSCode: the extension spawns the same backend as a child
+process (a "Managed server," one per workspace, on an OS-assigned port) and
+renders the same React board in a Webview panel, right next to your code.
+The Standalone flow above is unaffected either way — both share the same
+codebase, just different lifecycles (see
+[`docs/adr/0002-vscode-extension-spawns-standalone-server.md`](docs/adr/0002-vscode-extension-spawns-standalone-server.md)).
+
+To try it: open this repo in VSCode, then press F5 (Run and Debug → "Run
+ClaudeKanban Extension") to launch an Extension Development Host window. In
+that window, open any folder and run these commands from the Command
+Palette:
+
+| Command | Purpose |
+|---|---|
+| `ClaudeKanban: Open Board` | Starts the Managed server for the open workspace (if not already running) and opens the board in a Webview panel |
+| `ClaudeKanban: Install Hooks` | Merges the claudekanban hooks into that workspace's `.claude/settings.json` |
+
+The extension is not yet packaged/published — it's meant to be run from
+source via the Extension Development Host, not installed from a `.vsix`.
+
 ## Commands
 
 | Command | Purpose |
@@ -84,6 +107,7 @@ file to `settings.json.bak` before writing.
 | `npx vitest run <file>` | Run a single test file |
 | `npx vitest run -t "<name>"` | Run a single test by name |
 | `bash hooks/hooks.test.sh` | Hook smoke test — spins up a mock server on port 4317 and verifies every script in `hooks/` forwards stdin correctly |
+| `npm run package:extension` | Builds the standalone app, the compiled server, and the VSCode extension (`build` + `build:server` + `build:extension`) |
 
 ## Architecture
 

@@ -8,7 +8,13 @@ import { HttpSseTransport } from "./lib/transport/HttpSseTransport.js";
 import { groupSessions } from "./board/groupSessions.js";
 import "./app.css";
 
-const transport = new HttpSseTransport();
+declare global {
+  interface Window {
+    __CLAUDEKANBAN_BASE_URL__?: string;
+  }
+}
+
+const transport = new HttpSseTransport(window.__CLAUDEKANBAN_BASE_URL__ ?? "");
 
 function App() {
   const { sessions } = useLiveState(transport);

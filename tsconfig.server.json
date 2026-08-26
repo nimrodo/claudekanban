@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "dist-server",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/server.ts",
+    "src/api",
+    "src/domain",
+    "src/ingest",
+    "src/store",
+    "src/stream",
+    "src/sweep"
+  ],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+}
