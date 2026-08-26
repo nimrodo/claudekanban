@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "package:extension",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "group": {
+        "kind": "build"
+      }
+    }
+  ]
+}
