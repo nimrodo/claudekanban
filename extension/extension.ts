@@ -36,36 +36,40 @@ async function openBoard(context: vscode.ExtensionContext): Promise<void> {
     }
   }
 
-  const panel = vscode.window.createWebviewPanel(
-    "claudekanban.board",
-    "ClaudeKanban",
-    vscode.ViewColumn.Active,
-    { enableScripts: true, retainContextWhenHidden: true },
-  );
+  try {
+    const panel = vscode.window.createWebviewPanel(
+      "claudekanban.board",
+      "ClaudeKanban",
+      vscode.ViewColumn.Active,
+      { enableScripts: true, retainContextWhenHidden: true },
+    );
 
-  const distUri = vscode.Uri.joinPath(context.extensionUri, "dist");
-  const assetsDir = path.join(distUri.fsPath, "assets");
-  const assetFiles = readdirSync(assetsDir);
+    const distUri = vscode.Uri.joinPath(context.extensionUri, "dist");
+    const assetsDir = path.join(distUri.fsPath, "assets");
+    const assetFiles = readdirSync(assetsDir);
 
-  const scriptUris = assetFiles
-    .filter((f) => f.endsWith(".js"))
-    .map((f) => panel.webview.asWebviewUri(vscode.Uri.joinPath(distUri, "assets", f)).toString());
-  const styleUris = assetFiles
-    .filter((f) => f.endsWith(".css"))
-    .map((f) => panel.webview.asWebviewUri(vscode.Uri.joinPath(distUri, "assets", f)).toString());
+    const scriptUris = assetFiles
+      .filter((f) => f.endsWith(".js"))
+      .map((f) => panel.webview.asWebviewUri(vscode.Uri.joinPath(distUri, "assets", f)).toString());
+    const styleUris = assetFiles
+      .filter((f) => f.endsWith(".css"))
+      .map((f) => panel.webview.asWebviewUri(vscode.Uri.joinPath(distUri, "assets", f)).toString());
 
-  panel.webview.html = buildHtml({
-    scriptUris,
-    styleUris,
-    cspSource: panel.webview.cspSource,
-    port: managedServer.port,
-  });
+    panel.webview.html = buildHtml({
+      scriptUris,
+      styleUris,
+      cspSource: panel.webview.cspSource,
+      port: managedServer.port,
+    });
 
-  panel.onDidDispose(() => {
-    boardPanel = undefined;
-  });
+    panel.onDidDispose(() => {
+      boardPanel = undefined;
+    });
 
-  boardPanel = panel;
+    boardPanel = panel;
+  } catch (err) {
+    vscode.window.showErrorMessage(`ClaudeKanban: failed to open the board panel: ${(err as Error).message}`);
+  }
 }
 
 function installHooks(context: vscode.ExtensionContext): void {
