@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { chmodSync, readdirSync, realpathSync } from "node:fs";
+import { chmodSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { startManagedServer, stopManagedServer, type ManagedServerHandle } from "./managedServer.js";
 import { buildHtml } from "./boardPanel.js";
@@ -11,7 +11,10 @@ let boardPanel: vscode.WebviewPanel | undefined;
 function resolveDbPath(context: vscode.ExtensionContext, workspaceFolder: vscode.WorkspaceFolder): string {
   const configured = vscode.workspace.getConfiguration("claudekanban").get<string>("dbPath");
   if (configured) return configured;
-  return path.join(context.storageUri?.fsPath ?? context.globalStorageUri.fsPath, `${workspaceFolder.name}.db`);
+
+  const storageDir = context.storageUri?.fsPath ?? context.globalStorageUri.fsPath;
+  mkdirSync(storageDir, { recursive: true });
+  return path.join(storageDir, `${workspaceFolder.name}.db`);
 }
 
 async function openBoard(context: vscode.ExtensionContext): Promise<void> {
