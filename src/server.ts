@@ -4,6 +4,7 @@ import { createIngestHandler } from "./ingest/ingest.js";
 import { createApiRouter } from "./api/routes.js";
 import { handleSseConnection } from "./stream/broadcaster.js";
 import { runStaleSweep } from "./sweep/staleSweeper.js";
+import { resolveActualPort } from "./resolveActualPort.js";
 
 const PORT = Number(process.env.CLAUDEKANBAN_PORT ?? 4317);
 const DB_PATH = process.env.CLAUDEKANBAN_DB_PATH ?? "claudekanban.db";
@@ -20,6 +21,7 @@ app.get("/stream", (_req, res) => handleSseConnection(res));
 
 setInterval(() => runStaleSweep(db, new Date().toISOString(), STALE_TIMEOUT_MINUTES), STALE_SWEEP_INTERVAL_MS);
 
-app.listen(PORT, () => {
-  console.log(`claudekanban backend listening on http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  const actualPort = resolveActualPort(server);
+  console.log(`claudekanban backend listening on http://localhost:${actualPort}`);
 });
