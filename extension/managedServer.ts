@@ -45,13 +45,23 @@ export async function startManagedServer(extensionRoot: string, dbPath: string):
   const child = spawn(process.execPath, [serverEntry], {
     env: {
       ...process.env,
+      ELECTRON_RUN_AS_NODE: "1",
       CLAUDEKANBAN_PORT: String(port),
       CLAUDEKANBAN_DB_PATH: dbPath,
     },
     stdio: "pipe",
   });
 
-  await waitForReady(port, 10_000);
+  const stderrChunks: Buffer[] = [];
+  child.stderr?.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
+
+  try {
+    await waitForReady(port, 10_000);
+  } catch (err) {
+    const stderr = Buffer.concat(stderrChunks).toString("utf-8").trim();
+    child.kill();
+    throw stderr ? new Error(`${(err as Error).message}\n${stderr}`) : err;
+  }
 
   return { port, process: child };
 }
