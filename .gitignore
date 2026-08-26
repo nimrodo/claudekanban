@@ -11,5 +11,6 @@ dist-server/
 dist-extension/
 *.db
 *.db-journal
+.claude/claudekanban-port
 docs/handoffs/**
 .playwright-mcp/

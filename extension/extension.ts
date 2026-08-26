@@ -4,8 +4,10 @@ import path from "node:path";
 import { startManagedServer, stopManagedServer, type ManagedServerHandle } from "./managedServer.js";
 import { buildHtml } from "./boardPanel.js";
 import { installHooksIntoWorkspace } from "./installHooks.js";
+import { writePortFile, removePortFile } from "./portFile.js";
 
 let managedServer: ManagedServerHandle | undefined;
+let managedWorkspacePath: string | undefined;
 let boardPanel: vscode.WebviewPanel | undefined;
 
 function resolveDbPath(context: vscode.ExtensionContext, workspaceFolder: vscode.WorkspaceFolder): string {
@@ -33,6 +35,8 @@ async function openBoard(context: vscode.ExtensionContext): Promise<void> {
     const dbPath = resolveDbPath(context, workspaceFolder);
     try {
       managedServer = await startManagedServer(context.extensionUri.fsPath, dbPath);
+      managedWorkspacePath = workspaceFolder.uri.fsPath;
+      writePortFile(managedWorkspacePath, managedServer.port);
     } catch (err) {
       vscode.window.showErrorMessage(`ClaudeKanban: failed to start the managed server: ${(err as Error).message}`);
       return;
@@ -105,5 +109,9 @@ export function deactivate(): void {
   if (managedServer) {
     stopManagedServer(managedServer);
     managedServer = undefined;
+  }
+  if (managedWorkspacePath) {
+    removePortFile(managedWorkspacePath);
+    managedWorkspacePath = undefined;
   }
 }
