@@ -5,6 +5,11 @@ import { startManagedServer, stopManagedServer, type ManagedServerHandle } from 
 import { buildHtml } from "./boardPanel.js";
 import { installHooksIntoWorkspace } from "./installHooks.js";
 import { writePortFile, removePortFile } from "./portFile.js";
+import { randomBytes } from "node:crypto";
+
+function generateNonce(): string {
+  return randomBytes(16).toString("base64");
+}
 
 let managedServer: ManagedServerHandle | undefined;
 let managedWorkspacePath: string | undefined;
@@ -67,6 +72,7 @@ async function openBoard(context: vscode.ExtensionContext): Promise<void> {
       styleUris,
       cspSource: panel.webview.cspSource,
       port: managedServer.port,
+      nonce: generateNonce(),
     });
 
     panel.onDidDispose(() => {

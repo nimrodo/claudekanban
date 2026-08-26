@@ -3,20 +3,23 @@ export interface BuildHtmlOptions {
   styleUris: string[];
   cspSource: string;
   port: number;
+  nonce: string;
 }
 
 export function buildHtml(options: BuildHtmlOptions): string {
-  const { scriptUris, styleUris, cspSource, port } = options;
+  const { scriptUris, styleUris, cspSource, port, nonce } = options;
   const baseUrl = `http://localhost:${port}`;
 
   const styleTags = styleUris.map((uri) => `<link rel="stylesheet" href="${uri}">`).join("\n    ");
-  const scriptTags = scriptUris.map((uri) => `<script type="module" src="${uri}"></script>`).join("\n    ");
+  const scriptTags = scriptUris
+    .map((uri) => `<script type="module" nonce="${nonce}" src="${uri}"></script>`)
+    .join("\n    ");
 
   const csp = [
     `default-src 'none'`,
     `img-src ${cspSource} data:`,
     `style-src ${cspSource} 'unsafe-inline'`,
-    `script-src ${cspSource}`,
+    `script-src 'nonce-${nonce}'`,
     `connect-src ${baseUrl}`,
   ].join("; ");
 
@@ -29,7 +32,7 @@ export function buildHtml(options: BuildHtmlOptions): string {
   </head>
   <body>
     <div id="root"></div>
-    <script>
+    <script nonce="${nonce}">
       window.__CLAUDEKANBAN_BASE_URL__ = "${baseUrl}";
     </script>
     ${scriptTags}
