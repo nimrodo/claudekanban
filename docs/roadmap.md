@@ -1,8 +1,13 @@
 # Roadmap
 
-Captured from a grilling session on 2026-08-16. Framing and priority calls below are
-this session's conclusions, not derived from code — see git history for that context if
-this doc goes stale.
+Captured from a grilling session on 2026-08-16, then re-derived on 2026-08-31. Framing
+and priority calls below are those sessions' conclusions, not derived from code — see git
+history for that context if this doc goes stale.
+
+**The live ranking is [Re-derivation — 2026-08-31](#re-derivation--2026-08-31).** The
+`## Product Features` / `## Presentation` sections below it are kept as the original
+2026-08-16 record (with per-item status banners); where they disagree with the
+re-derivation, the re-derivation wins.
 
 ## Framing
 
@@ -10,7 +15,8 @@ claudekanban's primary purpose is a **GitHub portfolio piece**, read mainly by *
 recruiters** skimming for ~30 seconds (README, screenshots/GIF, maybe a live demo), and
 secondarily by **engineers** who read code and architecture in depth. There's no time
 pressure and nothing is being cut — this doc orders *everything* currently considered,
-it doesn't scope anything out.
+it doesn't scope anything out. _(The "nothing is cut" stance was revisited on
+2026-08-31; two items were ruled out of scope — see the Re-derivation section.)_
 
 Two tracks are kept deliberately separate: **Product Features** (the app itself) and
 **Presentation** (how the finished work is shown off). They're different kinds of work
@@ -20,6 +26,86 @@ Ordering principle: **dependency + narrative flow**, not raw effort or raw impac
 cheap visible correctness first, then the new domain entity it sets a precedent for,
 then the architecturally interesting demo, then the rest of the deferred/borrowed
 ideas, with Presentation last since it documents features that need to exist first.
+_(Superseded 2026-08-31 — see below.)_
+
+## Re-derivation — 2026-08-31
+
+Re-ranked in a grilling session on 2026-08-31, after items 1, 2a, and the VSCode
+extension shipped. The extension outgrew its planned "demo shell" slot (item 3): it
+landed with a real activate/deactivate lifecycle, a managed-server child process, a
+board Webview panel, an "Install Hooks" command, workspace-scoped DB config, and a
+port-file hook bridge (`extension/`, merge #2). Two roadmap items are done and one
+overshot, so "where next" was a request to re-derive the ordering, not pop the next
+card.
+
+### What changed from the 2026-08-16 framing
+
+- **Ordering principle** is now **recruiter-visible payload per unit effort** — optimize
+  what a 30-second skimmer sees per hour spent — not "dependency + narrative flow". The
+  structural foundation is built; the job now is making it legible to the primary
+  audience.
+- **Presentation items may interleave with / jump ahead of** remaining product features.
+  They are no longer pinned last. None of the Presentation track exists yet and it is
+  the literal 30-second payload.
+- **The Product Features / Presentation split is retained** as a labelling device only,
+  not as an ordering constraint.
+
+### Ranked remaining work
+
+Top band ("do these next") is items 1–3; the rest is ranked but not urgent.
+
+1. **Stand up CI** — a test-run workflow (`vitest run`) on push/PR plus a green-checks
+   badge in the README. Cheapest item that serves both audiences at once, and it speaks
+   directly to the TDD / spike-first discipline. No `.github/` exists today. Effort: low.
+2. **Package the VSCode extension as a `.vsix`** — [issue #3](https://github.com/nimrodo/claudekanban/issues/3),
+   already labelled `ready-for-agent`. `package:extension` build script exists; this is
+   the last sliver of the extension story (marketplace publishing stays out of scope).
+   Effort: low.
+3. **Waiting → Review escalation** (2026-08-16 item 4a) — a session `waiting` more than
+   5 minutes escalates to a new sixth board column (`queued`/`running`/`waiting`/
+   `review`/`done`/`failed`), via a new periodic sweep + `waiting_since` timestamp.
+   Already decided (see `docs/adr/0001-monitoring-only-no-intervention.md`); promoted
+   ahead of the README/GIF so there is a finished surface to document and film once,
+   rather than re-shooting after. Effort: medium.
+4. **README rewrite** — lead with what the tool does and why the architecture is
+   interesting (spike-first methodology, push-based hook ingestion vs. filesystem
+   watching, the `Transport` seam), not install instructions. Effort: low–medium.
+5. **Screenshots / GIF** — board mid-run (running-glow animation, subagent tree nesting)
+   and the Drawer detail view. Committed into the repo (e.g. `docs/assets/`) and
+   referenced by relative path; GitHub renders animated GIF inline in markdown (MP4 does
+   not autoplay in a README). Needs compelling multi-session board state to capture —
+   see the fog note below. Effort: low–medium.
+6. **UI density polish bundle** (2026-08-16 item 6) — column count badges + a global
+   ambient status strip ("N running / N failed"); timeline event-type icons + repeat-call
+   (`×N`) collapsing in the Drawer; card-level micro-progress for parent sessions with
+   subagents ("3 subagents · 2 done"); a light-mode variant of the graphite palette; a
+   `?` keyboard-shortcut reference overlay. Each small and independent. Effort:
+   low–medium.
+7. **Deeper backlog** (2026-08-16 item 6, remainder) — cost/token/tool-impact stats as a
+   Drawer stat block; a SQLite DB size / event-table growth inspector; active-session
+   staleness heuristic refinement; teammate/idle re-spawn handling (needs its own live
+   spike first). Effort: medium each; no dependencies between them.
+
+### Not yet specified (fog)
+
+- **Hosted live demo** — feasibility unknown; would need seeded/synthetic session data
+  rather than real hook traffic, and a hosting target. Kept as fog, not ranked, until
+  its feasibility is investigated.
+- **Synthetic / seeded demo board state** — a shared dependency of the Screenshots/GIF
+  item (5) and the hosted live demo. Real hook traffic will not reliably produce a good
+  frame on demand. Graduates into its own decision when item 5 is picked up.
+
+### Ruled out of scope on 2026-08-31
+
+- **Session task checklist** (2026-08-16 item 2b) — a `Task` entity fed by opt-in
+  `TaskCreate`/`TaskUpdate`. Medium effort for a feature most sessions never trigger
+  (the `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` opt-in is off by default), so near-zero
+  recruiter payoff under the new principle. The `.scratch/session-task-checklist/spec.md`
+  spec stays on disk if the destination is ever redrawn.
+- **VSCode-hosted intervention** (2026-08-16 item 5) — `cancel` via terminal PID,
+  `guidance` via `Terminal.sendText`. Now technically unblocked (the extension is real),
+  but large effort, hard to show in a static portfolio, and in tension with the spirit
+  of the monitoring-only ADR. Out of scope for this destination.
 
 ## Explicitly out of scope
 
@@ -90,6 +176,10 @@ confirmed flowing.
 
 ### 2b. Session task checklist (revived, retargeted at Task tools)
 
+> **Status 2026-08-31: ruled out of scope.** See
+> [Re-derivation — 2026-08-31](#re-derivation--2026-08-31). Kept below as the original
+> record.
+
 **Status update, same day:** the user pointed at
 `https://code.claude.com/docs/en/agent-sdk/todo-tracking`, which explained the real
 cause of item 2a's original dead end: on Sonnet 5 (and Opus 4.8/Fable 5/Mythos 5),
@@ -117,6 +207,10 @@ card + Drawer UI. No further spike prerequisite — payload shapes are confirmed
 ingest branches, separate schema) — either can be built first.
 
 ### 3. VSCode demo shell
+
+> **Status 2026-08-31: done, and overshot.** The extension shipped in merge #2 with far
+> more than a demo shell (see [Re-derivation — 2026-08-31](#re-derivation--2026-08-31)).
+> Remaining sliver — packaging as a `.vsix` — is now item 2 of the re-derived ranking.
 
 **Why here:** the architecturally interesting piece — proves out the `Transport`
 interface design (`getState`/`subscribe`/`postAction`) already built into the spec for
@@ -165,6 +259,10 @@ session-side polling hook, no UI controls that act on a running session. The unu
 (see item 5 below), not something to clean up now.
 
 ### 5. VSCode-hosted intervention (future, gated on item 3)
+
+> **Status 2026-08-31: ruled out of scope.** Now technically unblocked (the extension is
+> real), but out of scope for the current destination — see
+> [Re-derivation — 2026-08-31](#re-derivation--2026-08-31).
 
 **New item, 2026-08-16.** Explicitly separate from item 3 (the VSCode demo shell, which
 stays scoped to just proving the `Transport` seam) — this depends on a *real*,
@@ -219,6 +317,11 @@ own priority order, minus what's already promoted above:
 **Effort:** low–medium each; no dependencies between them.
 
 ## Presentation (last, documents the finished product)
+
+> **Status 2026-08-31: no longer pinned last.** Under the re-derived principle these
+> items interleave with product features — README rewrite and Screenshots/GIF are
+> items 4–5, and "CI status badge" was promoted to item 1 (stand up CI). See
+> [Re-derivation — 2026-08-31](#re-derivation--2026-08-31).
 
 Net-new for this backlog — not from either source doc, proposed for the recruiter-facing
 track:
