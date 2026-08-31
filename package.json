@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./dist-extension/extension/extension.js",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.100.0",
+    "node": ">=22"
   },
   "contributes": {
     "commands": [
@@ -36,6 +37,7 @@
     "build:server": "tsc -p tsconfig.server.json && node scripts/copy-server-assets.js",
     "build:extension": "tsc -p extension/tsconfig.json",
     "package:extension": "npm run build && npm run build:server && npm run build:extension",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.scripts.json --noEmit && tsc -p extension/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "hooks:install": "tsx scripts/install-hooks.ts"
