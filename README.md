@@ -1,5 +1,7 @@
 # claudekanban
 
+[![CI](https://github.com/nimrodo/claudekanban/actions/workflows/ci.yml/badge.svg)](https://github.com/nimrodo/claudekanban/actions/workflows/ci.yml)
+
 A real-time kanban-style console for observing Claude Code sessions. Claude
 Code hooks forward hook payloads to a local Express backend, which persists
 them to SQLite and pushes live updates to a React board over SSE.
